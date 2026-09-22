@@ -56,7 +56,7 @@ if [[ -f "$selective_build/twins-mixed.rds" ]]; then
   replay_flags+=(--twins)
 fi
 python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" "${replay_flags[@]}"
-for child in nested mapped vector wide; do
+for child in nested mapped vector wide nested-map; do
   if [[ -d "$selective_build/$child" ]]; then
     bash "$repo_dir/rhodium/sim/tests/run-selective-verilator.sh" "$selective_build/$child"
   fi

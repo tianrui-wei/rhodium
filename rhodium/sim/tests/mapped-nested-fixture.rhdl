@@ -1,0 +1,50 @@
+#lang rhodium
+// Routes legal cross-element Queue feedback through a retained record/vector/record payload map.
+// SPDX-License-Identifier: Apache-2.0
+
+import lib("flow/queue.rhdl") open
+import lib("flow/map.rhdl") open
+
+bundle Word():
+  data: Bits(65)
+
+bundle Packet():
+  lanes: Vec(2, Word())
+
+sync_circuit AggregateQueue(depth :: PosInt, pipe :: Boolean, flow :: Boolean,
+                            ~self_feedback: self_feedback :: Boolean = #false):
+  input payload: Bits(64)
+  input payload_high: Bits(1)
+  input valid: Bool
+  input ready: Bool
+  output input_ready: Bool
+  output output_valid: Bool
+  output left: Bits(64)
+  output right: Bits(64)
+  output left_high: Bits(1)
+  output right_high: Bits(1)
+  output occupancy: Bits(index_width(depth + 1))
+  inst queue_instance(Queue(Packet(), depth, ~pipe: pipe, ~flow: flow))
+  def input_map = Bits(65) |> map_flow(value):
+    def first = Word():
+      data: value
+    def second = Word():
+      data: (if self_feedback | queue_instance.egress.bits.lanes[1].data | queue_instance.egress.bits.lanes[0].data) + bits(1, 65)
+    Packet():
+      lanes: vec(first, second)
+  input_map.left.valid <== valid
+  input_map.left.bits <== concat(payload_high, payload)
+  input_map.right |> queue_instance.ingress
+  queue_instance.egress.ready <== ready
+  input_ready <== input_map.left.ready
+  output_valid <== queue_instance.egress.valid
+  left <== queue_instance.egress.bits.lanes[0].data[0..64]
+  left_high <== queue_instance.egress.bits.lanes[0].data[64..65]
+  right <== queue_instance.egress.bits.lanes[1].data[0..64]
+  right_high <== queue_instance.egress.bits.lanes[1].data[64..65]
+  occupancy <== queue_instance.count
+
+fun elaborate_aggregate(depth, pipe, flow, ~self_feedback: self_feedback = #false):
+  elaborate_with_top(AggregateQueue(depth, pipe, flow, ~self_feedback: self_feedback), ~constructs: #true)
+
+export elaborate_aggregate

@@ -306,3 +306,20 @@ ports; directed values exercise carry and wraparound alongside random upper bits
 The existing narrow vector replay still passes with the generalized oracle.
 Nested aggregate captures, effects, retained pipes, performance measurements,
 and previous simulator-suite migration remain open.
+
+## Captured nested aggregate feedback
+
+The captured aggregate matrix now includes a record containing a vector of
+65-bit records. Its live feedback crosses all three aggregate boundaries, with
+every payload bit exposed to the same independent wide oracle. All four shapes
+pass 260 host checks, including rejection of genuine same-leaf bypass cycles.
+Sixteen nested configurations pass 256-cycle pre/post-edge replay in interpreter,
+generated C, and materialized CIRCT/Verilator, including default optimization.
+Effects, retained pipes, performance measurements, and previous simulator-suite
+migration remain open.
+
+The complete updated `make sim-selective-test` passes 777 host checks and all
+base, nested-composition, repeated-instance, captured scalar/record/vector,
+multiword, and nested-aggregate interpreter/generated-C replays. Generated
+artifacts remain external. The nested aggregate matrix additionally passes the
+separate CIRCT/Verilator runner; the full host entry point does not invoke it.

@@ -119,7 +119,9 @@ false whole-record cycle. The equivalent two-element vector map also passes
 optimization. Two 65-bit vector elements also pass the same matrix with every
 payload bit observed, including carry across bit 63, 65-bit wraparound, and
 unaligned element packing. All three shapes reject genuine same-field/element
-bypass cycles. Nested aggregate mapping and broader effects coverage remain pending. [Implementation rules](DEVELOPING.md) describe
+bypass cycles. A record containing a vector of 65-bit records passes the same
+three-way matrix, preserving captures through all three aggregate boundaries.
+Broader effects coverage remains pending. [Implementation rules](DEVELOPING.md) describe
 publication, ownership and focused validation.
 
 Native implementations must completely cover each output port with disjoint

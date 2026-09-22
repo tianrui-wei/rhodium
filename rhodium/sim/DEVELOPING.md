@@ -181,3 +181,8 @@ ports expose every payload bit as a 64-bit low word and a one-bit high word.
 `RDS_WIDE_DIR` holds these models; the runner's `wide-payload` marker selects the
 matching Verilator bench and `--wide` oracle mode. Directed values exercise
 64-bit carry and 65-bit wraparound alongside random upper bits, reset and stalls.
+
+`mapped-nested-fixture.rhdl` wraps the same multiword values in a record containing
+a vector of records. Its capture crosses all three aggregate boundaries while
+preserving the field dependency. `RDS_NESTED_MAP_DIR` emits this group, which uses
+the wide oracle and bench unchanged so every payload bit remains observable.

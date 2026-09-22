@@ -1,5 +1,5 @@
 #lang rhombus
-// Checks record-, vector-, and multiword-producing retained maps with captured Queue feedback and emits differential models.
+// Checks aggregate-producing retained maps with captured Queue feedback and emits differential models.
 // SPDX-License-Identifier: Apache-2.0
 
 import:
@@ -13,6 +13,7 @@ import:
   "mapped-aggregate-fixture.rhdl".elaborate_aggregate
   "mapped-vector-fixture.rhdl" as vector_fixture
   "mapped-wide-fixture.rhdl" as wide_fixture
+  "mapped-nested-fixture.rhdl" as nested_fixture
   lib("racket/base.rkt") as rkt
 
 fun check_matrix(elaborate_aggregate, destination):
@@ -45,8 +46,11 @@ check_matrix(vector_fixture.elaborate_aggregate, rkt.getenv("RDS_VECTOR_DIR"))
 
 check_matrix(wide_fixture.elaborate_aggregate, rkt.getenv("RDS_WIDE_DIR"))
 
+check_matrix(nested_fixture.elaborate_aggregate, rkt.getenv("RDS_NESTED_MAP_DIR"))
+
 // Same-field feedback closes a real combinational cycle when empty bypass is enabled.
 check:
   elaborate_aggregate(1, #false, #true, ~self_feedback: #true) ~throws "combinational cycle"
   vector_fixture.elaborate_aggregate(1, #false, #true, ~self_feedback: #true) ~throws "combinational cycle"
   wide_fixture.elaborate_aggregate(1, #false, #true, ~self_feedback: #true) ~throws "combinational cycle"
+  nested_fixture.elaborate_aggregate(1, #false, #true, ~self_feedback: #true) ~throws "combinational cycle"

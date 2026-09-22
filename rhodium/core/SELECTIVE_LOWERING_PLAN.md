@@ -118,8 +118,6 @@ record the scope at that point. This list is the current remaining scope:
 
 - Complete effect/error coverage, preserving assertions and exactly-once effects
   across direct selection and portable expansion.
-- Complete native retained-pipe execution; public declarations, portable RTL
-  preservation, and retained trace equivalence are validated below.
 - Migrate the previous simulator regression suite, including core-only inputs.
 - Measure elaboration and compilation time, emitted size, peak memory, and
   throughput for identical direct and expanded workloads after correctness.
@@ -369,94 +367,155 @@ Boundary, license-header, CI-routing, and whitespace checks pass. Native pipe
 execution, broader effect/error coverage, simulator regression migration, and
 performance measurements remain open.
 
-## Mixed native Queue and retained pipe execution
+## Mixed native pipe execution follow-up
 
-The dependent simulator merges the public pipe/trace implementation. Eighteen
-Queue/pipe configurations pass 54 host checks, proving that direct Queue
-selection needs no portable Queue provider while pipes expand generically.
-Elastic, control-only, valid-only, and always-capture families cover stages
-1, 2, and 4, including optional flushes. All configurations pass 512-cycle
-pre/post-edge oracle replay in interpreter, generated C, and materialized
-CIRCT/Verilator with default native optimization. The oracle covers invalid
-payload observations, stalls, reset with pending traffic, consecutive flushes,
-and repeated evaluation without an edge.
+The [dependent simulator validation](https://github.com/tianrui-wei/rhodium/commit/cc4068a)
+merges public pipe and trace support. Eighteen mixed Queue/pipe configurations
+pass 54 host checks and 512-cycle pre/post-edge oracle replay in interpreter,
+generated C, and materialized CIRCT/Verilator, including default optimization.
+Elastic, control-only, valid-only, and always-capture families cover one, two,
+and four stages and flush options. Direct Queue selection has no Queue expansion
+provider; pipe bodies use portable expansion and generic native execution under
+the same schedule. Tests cover stalls, invalid payloads, pending reset,
+consecutive flushes, and repeated evaluation without clock advancement.
 
-The shared runtime-model helper also passes the existing 16-configuration nested
-multiword replay. Boundary, license, CI-routing, Python/shell syntax, and
-whitespace checks pass. This is focused validation after the previous 777-check
-full entry-point baseline. Broader effects/errors, previous simulator regression
-migration, and performance measurements remain open.
+The shared runtime ABI helper passes existing nested multiword replay across
+16 configurations. This is focused evidence after the 777-check full baseline.
+Broader effects/errors, previous simulator regression migration, and performance
+measurements remain open.
 
-## Retained assertions and failed-edge atomicity
+## Retained assertion failure/retry follow-up
 
-The dependent simulator adds a retained construct declaring guarded assertion
-and state effects beside Queue. Forty-eight host checks verify that the named
-assertion survives exactly once in direct, expanded, and optimized models.
-Forty-eight interpreter/generated-C traces each pass 256 accepted edges with
-repeated rejected attempts, changed proposed inputs, and retry against clean
-execution. Checks cover unchanged register/Queue state, stable diagnostic cycle
-numbers, future drain, and reset/guard suppression. The host entry point now
-includes this effects group. Boundary, license, CI-routing, Python/shell syntax,
-and whitespace checks pass. External callback effects, broader runtime regression
-migration, and performance measurements remain open.
+The [dependent assertion validation](https://github.com/tianrui-wei/rhodium/commit/3ff43b4)
+adds a retained guarded assertion/state construct beside Queue. Forty-eight host
+checks verify exactly one named assertion after direct/expanded extraction and
+optimization. Forty-eight interpreter/generated-C traces each pass 256 accepted
+edges, including repeated rejected attempts with different proposed inputs.
+Register/Queue state and diagnostic cycle numbers remain unchanged on failure;
+retry agrees with clean execution, including later drain. Reset and disabled
+guards suppress checks. This is focused evidence; external callback effects,
+previous simulator regression migration, and performance remain open.
 
-## Retained external host effects
+## Retained external callback follow-up
 
-The dependent native path now validates the host ABI before emission: five bound
-word inputs, declared reset, one clock/reset association, no flags, and registered
-output queries within the result count. Thirty focused host/native/Queue contract
-checks pass, including malformed-slot rejection. Repeated instances of one
-retained host construct select native adapters without executing a portable
-sentinel. Four 256-edge interpreter/generated-C traces, with and without
-optimization, check per-occurrence callback counts, 64-bit arguments/results,
-reset, and suppression during evaluation and failed assertions or missing sibling
-bindings. A callback that writes a tentative output and fails publishes neither
-that output nor hardware state; subsequent execution succeeds.
+The [dependent host-effect validation](https://github.com/tianrui-wei/rhodium/commit/4773366)
+passes 30 host/native/Queue contract checks. Malformed callback inputs now fail
+during lowering. Four 256-edge traces exercise repeated retained host occurrences
+in interpreter and generated C, with and without optimization. Accepted edges
+invoke each occurrence once; evaluation, failed assertions, and missing sibling
+bindings invoke none. Registered 64-bit results, reset handling, and suppression
+of tentative outputs after callback failure pass. Native selection never executes
+the portable sentinel.
 
-Callbacks remain responsible for external effects they perform before returning
-failure; the runtime does not promise rollback of arbitrary external systems.
-Broader runtime regression migration, remaining error coverage, and performance
-measurements remain open. Boundary, license, CI-routing, syntax, and whitespace
-checks pass; the host suite includes the new callback group.
+The runtime does not roll back external side effects a callback already performed
+before failing. This limit is documented alongside the tested hardware-state
+and callback-invocation guarantees. Remaining work includes broader runtime/error
+regression migration and performance measurements; this is focused validation,
+not a new full-suite baseline.
 
-## Runtime regression migration: publication and scheduling
+## Runtime publication/scheduling migration follow-up
 
-Three independent C++ regressions from the previous simulator PR now live under
-`rhodium/sim/tests`: batched-cycle publication/failure, parallel state scheduling,
-and static demand regions. Package-relative includes and license headers are
-updated; the parallel test uses an explicit unsigned flag conversion required by
-the current compiler. Their original transition oracles remain intact.
+The [dependent runtime migration](https://github.com/tianrui-wei/rhodium/commit/f79b7eb)
+restores three previous independent C++ regressions under package ownership.
+Fifty batched-cycle configurations pass publication/failure, parity, reset,
+callback, and reattachment checks. Six reference/parallel scheduling modes pass
+512 cycles, including snapshot-prefix splitting and eight-worker execution.
+Seventy-five static-demand modes pass 1,000 cycles across shared guards, wide
+state, scratch reuse, generated layouts, and strict invalid-selector checks.
 
-Validation passes 50 batched kind/mode configurations, six reference/parallel
-scheduling modes over 512 cycles (including eight-worker execution), and 75
-static-demand modes over 1,000 cycles. Coverage includes failed phases, callbacks,
-state-bank parity, reattachment, snapshot-prefix splitting, unique state owners,
-wide values, shared guards, scratch reuse, and strict invalid-selector errors.
-The demand test's generated-library compilation exceeded an initial two-minute
-runner limit; the completed run uses a ten-minute limit for that matrix.
+A standalone `make sim-runtime-regression-test` entry point and integration in
+the selective host runner reuse compiler helpers and runtime builds. CI installs
+Clang explicitly. The demand matrix gets ten minutes to compile its 74 generated
+libraries; an initial two-minute limit expired before the successful rerun.
+Compiler optimization, object-family, arithmetic, and frontend-fixture migration,
+plus performance measurements, remain open. These results do not claim a fresh
+full selective-suite run.
 
-`make sim-runtime-regression-test` provides an isolated entry point, and the
-selective host runner includes these tests using its existing runtime library.
-CI now explicitly installs Clang for generated-code checks. Boundary, license,
-CI-routing, shell syntax, and whitespace checks pass. Remaining migration includes
-compiler optimization, object-family, arithmetic, and frontend-generated fixtures;
-performance measurement remains open. These are focused regression results,
-not a new complete selective-suite baseline.
+## FIFO optimization migration follow-up
 
-## FIFO optimization regression migration
+The [dependent FIFO regression migration](https://github.com/tianrui-wei/rhodium/commit/f24adc7)
+restores independent width and derived-field oracles. Two width-growth cases pass
+4,000 stimulus iterations each, covering safe 240-to-19-bit narrowing, retained
+240-bit cyclic growth, signed/unsigned views, strict selector failures, and invalid
+serialized opcode rejection. Derived-field caching passes 6,000 cycles at depths
+1, 2, and 3; incompatible pipeline storage stays untransformed. The shared runner
+now accepts focused test names after the build directory. Original test semantics
+are preserved; source formatting is adjusted for current compiler warnings.
+Remaining compiler/object/arithmetic/frontend migration and performance gates stay
+open. These focused results do not replace the earlier full-suite baseline.
 
-The previous FIFO-width and FIFO-derived-field C++ regressions now live under
-package ownership and run through the shared native regression entry point.
-The runner accepts explicit test names after an existing build directory so
-focused compiler changes do not repeat unrelated scheduling matrices.
+## Boolean and selector migration follow-up
 
-Both width-growth cases pass 4,000 stimulus iterations each, checking safe
-240-to-19-bit narrowing, preserved 240-bit cyclic growth, signed/unsigned views,
-strict selector errors, and rejection of an invalid serialized opcode inventory.
-Derived-field replay passes 6,000 cycles at each of depths 1, 2, and 3, including
-reset and changing inputs; incompatible pipeline storage remains untransformed.
-The original oracles are preserved. Explicit loop/return formatting fixes current
-compiler warnings; no optimizer behavior changes in this migration.
-Boundary, license, CI-routing, shell syntax, and whitespace checks pass.
-Remaining compiler/object/arithmetic/frontend migrations and performance
-measurements stay open.
+The [dependent selector regression migration](https://github.com/tianrui-wei/rhodium/commit/c7a592e)
+restores three package-owned regressions. Eight Boolean cases exhaust 512 input
+combinations each across six-bit and 68-bit fields, including overlapping decoder
+rows and first-match/default semantics. Six sparse selector matrices pass 4,000
+cycles each against independent software, including disabled rows and serialized
+model round trips. Eight ring-selection configurations pass 2,400 cycles each
+with 150-bit FIFO payloads and 70-bit aligned views, reference versus generated C,
+one/four workers, debug/release builds, strict invalid-selector retry, reset,
+wraparound, and compiled-library reattachment. A Boost big-integer oracle
+expression now uses explicit bit setting to compile cleanly with GCC 16.
+
+Boundary, license-header, CI-routing, shell syntax, and whitespace checks pass.
+These are focused results; remaining compiler/object/arithmetic/frontend
+regression migration, integrated validation, and performance measurements remain
+required. Simulator sources stay on the dependent branch.
+
+## Matcher and FIFO execution migration follow-up
+
+The [dependent matcher/FIFO migration](https://github.com/tianrui-wei/rhodium/commit/6ac000f)
+restores five regression groups without changing their original oracle logic.
+Two request-prefix cases pass 4,000 cycles each and reject reuse with mismatched
+update operands. Seven packed-matcher configurations pass 700 cycles across
+sixteen modes against independent arbitration, including prefix feedback,
+priority ownership, grant reuse, reset, and compiled-library swaps. Forty-eight
+empty-FIFO configurations pass 500 cycles in five modes across widths 1, 75, and
+257, depths 1 and 3, and eight protocol options. Ten stationary-matcher cases
+pass 300 cycles in five modes, preserving independent query operands and strict
+invalid-grant behavior. Ten FIFO-batch cases pass 400 cycles in five modes,
+covering up to sixteen queues, wide payloads, late dependencies, repeated
+evaluation, failed host callbacks, retry, and reattachment.
+
+The larger generated-library matrices receive a ten-minute execution limit.
+Boundary, license-header, CI-routing, shell syntax, and whitespace checks pass.
+Remaining compiler/object/arithmetic/frontend migration, integrated validation,
+and performance measurements stay open. These focused results do not replace
+the earlier complete selective-suite baseline.
+
+## Contract and payload optimization migration follow-up
+
+The [dependent contract/payload migration](https://github.com/tianrui-wei/rhodium/commit/c6513bd)
+restores seven regression groups. Contract kernels pass 1,000 cycles across ten
+modes, including captured computations, branches, feedback, snapshot updates,
+and malformed-program rejection. Decoder specialization passes 66 shapes over
+8,192 inputs in eight modes against independent first-match/default decoding.
+Concurrent payload pooling passes 5,000 cycles in five modes. Lifetime sharing
+passes 88 configurations at 2,000 cycles each across five modes, including
+intermediate readers, exact capacity, and payload-independent control. Routed
+exchange passes all 468 width/variant/layout combinations at 4,000 cycles each
+across five modes, including 1,024-bit payloads, ownership rejection, failed-edge
+retry, and reattachment. Both cross-object cache cases pass 512 cycles in ten
+modes; semantic provenance passes demanded-field, feedback, wide-key, pruning,
+and malformed-mapping checks.
+
+The original oracle logic remains intact; the decoder cleanup loop is reformatted
+for GCC 16. Boundary, license-header, CI-routing, shell syntax, and whitespace
+checks pass. Validation artifacts moved to the home-filesystem cache after the
+user quota on `/tmp` prevented compilation and diagnostics; prior regression
+artifacts were preserved with their old path linked to the new location. These
+focused results leave frontend/core-only fixture migration, integrated validation,
+and performance measurements open.
+
+## Functional vector-update retention
+
+Restoring the ordinary-core simulator regressions exposed an omitted IR
+improvement: `vector_updated` expanded into per-element muxes. The frontend
+now preserves one guarded `rtl.vector_write_set`. It compares the full selector
+before truncating the write index, so out-of-range updates preserve the source.
+Forty-two focused frontend checks pass. Both `vector-update` and
+`vector-register-update` CIRCT/Verilator fixtures pass with `--full`; the reviewed
+functional-update reference now includes an explicit shared range guard.
+Boundary, license-header, CI-routing, example-reference, and whitespace checks
+pass. The dependent simulator's functional-update regression retains the compact
+operation for single-element, power-of-two, wide-selector, and multiword cases.

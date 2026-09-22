@@ -347,7 +347,11 @@ one million checked cycles per execution. `--cpu` pins the entire measurement
 to one available CPU; `--cycles`, `--repetitions`, and `--depths` support a
 focused smoke run. Use an otherwise idle host for reported performance.
 
-The runner creates a fresh compiled root and warms bytecode once. Its Rhombus
+The runner creates a fresh compiled root and warms both lowering paths until a
+complete pair causes no bytecode writes. It rejects any cache change during
+measured emission. `--resume` continues the same focused validation batch with
+its single existing root and writes a new results subdirectory, preserving prior
+artifacts; it does not bypass dependency rebuilding. Its Rhombus
 emitter separately times retained frontend elaboration and selected lowering,
 asserting zero Queue expansions for direct selection and one for fallback.
 Circuit emission is batched by mode and repetition to share Racket startup;

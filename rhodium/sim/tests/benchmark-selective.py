@@ -23,6 +23,7 @@ def main():
     parser.add_argument('--cycles', type=int, default=1000000)
     parser.add_argument('--depths', type=int, nargs='+', default=[1, 3, 8])
     parser.add_argument('--cpu', type=int)
+    parser.add_argument('--resume', action='store_true', help='reuse this validation batch\'s compiled root; write a new results subdirectory')
     args = parser.parse_args()
     if args.repetitions < 1 or args.cycles < 1 or any(d not in (1, 3, 8) for d in args.depths):
         parser.error('positive repetitions/cycles and validated depths 1, 3, or 8 required')
@@ -30,12 +31,20 @@ def main():
         os.sched_setaffinity(0, {args.cpu})
     directory = args.directory.resolve()
     directory.mkdir(parents=True, exist_ok=True)
+    if args.resume:
+        roots = list(directory.glob('compiled.*'))
+        if len(roots) != 1 or not roots[0].is_dir():
+            parser.error('--resume requires exactly one compiled root from this validation batch')
+        compiled_root = str(roots[0])
+        directory = Path(tempfile.mkdtemp(prefix='results.', dir=directory))
+    else:
+        compiled_root = tempfile.mkdtemp(prefix='compiled.', dir=directory)
     os.chdir(ROOT)
     scratch = directory / 'tmp'
     scratch.mkdir(exist_ok=True)
     env = dict(os.environ, TMPDIR=str(scratch), PYTHONDONTWRITEBYTECODE='1',
                PLTCOLLECTS=str(ROOT) + ':',
-               PLTCOMPILEDROOTS=tempfile.mkdtemp(prefix='compiled.', dir=directory))
+               PLTCOMPILEDROOTS=compiled_root)
     env.pop('RHODIUM_PRECOMPILED', None)
     env.pop('RDS_BENCH_BATCH', None)
     env['RDS_OPTIMIZER'] = subprocess.check_output(
@@ -57,10 +66,29 @@ def main():
         (directory / (name + '.time.json')).write_text(json.dumps(result) + '\n')
         return result
 
-    # Exclude first-time bytecode construction from per-circuit timings.
-    measured(['tools/run-racket-tests.sh', 'rhodium/sim/tests/benchmark-selective.rhm'], 'bytecode',
-             dict(RDS_BENCH_DEPTH='1', RDS_BENCH_OPTIONS='0', RDS_BENCH_MODE='direct',
-                  RDS_BENCH_OUTPUT=str(directory / 'warmup.rds')))
+    def cache_signature():
+        return sorted((str(p.relative_to(compiled_root)), p.stat().st_size, p.stat().st_mtime_ns)
+                      for p in Path(compiled_root).rglob('*') if p.is_file())
+
+    # The first import can leave transitive dependencies to rebuild on later runs.
+    # Require a complete direct/expanded pair without any bytecode writes.
+    warmups = []
+    if not args.resume:
+        measured(['tools/run-racket-tests.sh', 'rhodium/sim/tests/benchmark-selective.rhm'], 'bytecode',
+                 dict(RDS_BENCH_DEPTH='1', RDS_BENCH_OPTIONS='0', RDS_BENCH_MODE='direct',
+                      RDS_BENCH_OUTPUT=str(directory / 'warmup.rds')))
+    for attempt in range(8):
+        before = cache_signature()
+        for mode in ('direct', 'expanded'):
+            warmups.append(measured(['racket', '-y', 'rhodium/sim/tests/benchmark-selective.rhm'],
+                                    f'cache-warmup-{attempt}-{mode}',
+                                    dict(RDS_BENCH_DEPTH='8', RDS_BENCH_OPTIONS='1', RDS_BENCH_MODE=mode,
+                                         RDS_BENCH_OUTPUT=str(directory / 'warmup.rds'))))
+        stable_cache = cache_signature()
+        if stable_cache == before:
+            break
+    else:
+        raise RuntimeError('bytecode did not stabilize; refusing incomparable startup/RSS measurements')
     runtime = directory / 'librhodium_sim.so'
     measured([cc, *flags, '-pthread', '-fPIC', '-shared',
               *sorted((ROOT / 'rhodium/sim/runtime').glob('*.c')), '-ldl', '-o', runtime], 'runtime-build')
@@ -77,6 +105,7 @@ def main():
                 dict(RDS_BENCH_BATCH='1', RDS_BENCH_DEPTH=','.join(map(str, args.depths)),
                      RDS_BENCH_REPETITION=str(repetition), RDS_BENCH_MODE=mode,
                      RDS_BENCH_OUTPUT=str(directory)))
+            assert cache_signature() == stable_cache, 'bytecode changed during measured emission'
             for line in (directory / (batch + '.log')).read_text().splitlines():
                 name, *values = line.split()
                 phase_timings[name] = (batch, *map(float, values))
@@ -130,15 +159,21 @@ def main():
                   racket=subprocess.check_output(['racket', '--version'], text=True).strip(),
                   rhombus_package=subprocess.check_output(['raco', 'pkg', 'show', 'rhombus'], env=env, text=True),
                   recorded_at=datetime.now(timezone.utc).isoformat(),
+                  compiled_root=compiled_root, cache_warmups=warmups,
+                  stable_cache_files=len(stable_cache),
+                  benchmark_sources={name: hashlib.sha256((ROOT / 'rhodium/sim/tests' / name).read_bytes()).hexdigest()
+                                     for name in ('benchmark-selective.py', 'benchmark-selective.rhm',
+                                                  'benchmark-selective.c', 'selective-queue-fixture.rhdl')},
                   cpu_model=next((line.split(':', 1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines()
                                   if line.startswith('model name')), platform.processor()),
                   flags=flags, cycles=args.cycles, seed=12648430, repetitions=args.repetitions,
                   note='Throughput includes host stimulus, independent oracle, and all pre/post-edge port reads. '
-                       'Fresh bytecode is built once; per-circuit timings exclude bytecode compilation. '
+                       'Bytecode is warmed to stability; per-circuit timings exclude bytecode compilation. '
                        'Lowering peak RSS and process time cover each matched circuit batch; phase timings are per circuit. '
                        'Other peak RSS values are per subprocess; repeated rows expose variability.',
                   lowering_batches=lowering_batches, rows=rows, summary=summary)
     (directory / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
+    print('Benchmark report:', directory / 'report.json', flush=True)
 
 
 if __name__ == '__main__':

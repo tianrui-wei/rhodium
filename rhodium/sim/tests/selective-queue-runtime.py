@@ -191,7 +191,13 @@ if "--twins" in sys.argv:
     print("Repeated Queue definitions passed independent direct/mixed/expanded state replay")
 
 if "--aggregate" in sys.argv:
+    wide = "--wide" in sys.argv
+    payload_width = 65 if wide else 8
+    payload_mask = (1 << payload_width) - 1
+    word_mask = (1 << 64) - 1
     names = ["input_ready", "output_valid", "left", "right", "occupancy"]
+    if wide:
+        names += ["left_high", "right_high"]
     for depth in [1, 2, 3, 8]:
         for pipe in [False, True]:
             for flow in [False, True]:
@@ -202,7 +208,7 @@ if "--aggregate" in sys.argv:
                 rng = random.Random(67127 + depth * 4 + pipe * 2 + flow)
                 stimuli = []
                 for cycle in range(256):
-                    row = dict(payload=rng.randrange(256), valid=rng.randrange(3) != 0,
+                    row = dict(payload=rng.randrange(1 << payload_width), valid=rng.randrange(3) != 0,
                                ready=rng.randrange(2) != 0, reset=cycle in [0, 1, 37, 113])
                     if cycle == 0 or 2 <= cycle < 2 + depth + 2 or 25 <= cycle <= 37:
                         row.update(valid=True, ready=False)
@@ -212,10 +218,14 @@ if "--aggregate" in sys.argv:
                         row.update(valid=False, ready=True)
                     if cycle == 255:
                         row.update(valid=True, ready=True)
+                    if wide and cycle % 7 == 0:
+                        row["payload"] = [0, (1 << 64) - 1, 1 << 64, payload_mask][(cycle // 7) % 4]
                     stimuli.append(row)
                 verilog_outputs = []
                 if "--verilator" in sys.argv:
-                    vectors = "".join(" ".join(str(int(row[name])) for name in ["payload", "valid", "ready", "reset"]) + "\n" for row in stimuli)
+                    vectors = "".join(" ".join(str(int(value)) for value in
+                        ([row["payload"] & word_mask, row["payload"] >> 64] if wide else [row["payload"]]) +
+                        [row["valid"], row["ready"], row["reset"]]) + "\n" for row in stimuli)
                     replay = subprocess.run([str(build / ("verilator-aggregate-" + suffix) / "VAggregateQueue")],
                                             input=vectors, text=True, capture_output=True, check=True)
                     verilog_outputs = [dict(zip(names, map(int, line.split()))) for line in replay.stdout.splitlines()]
@@ -224,13 +234,19 @@ if "--aggregate" in sys.argv:
                 for cycle, row in enumerate(stimuli):
                     for model in models:
                         for name, value in row.items():
-                            model.set(name, value)
+                            if wide and name == "payload":
+                                model.set(name, value & word_mask)
+                                model.set("payload_high", value >> 64)
+                            else:
+                                model.set(name, value)
                     for edge in ["before", "after"]:
                         left = row["payload"] if flow and count == 0 else storage[read][0]
-                        right = ((left + 1) & 255) if flow and count == 0 else storage[read][1]
+                        right = ((left + 1) & payload_mask) if flow and count == 0 else storage[read][1]
                         oracle = dict(input_ready=int(count < depth or (pipe and row["ready"])),
                                       output_valid=int(count > 0 or (flow and row["valid"])),
-                                      left=left, right=right, occupancy=count)
+                                      left=left & word_mask, right=right & word_mask, occupancy=count)
+                        if wide:
+                            oracle.update(left_high=left >> 64, right_high=right >> 64)
                         for model in models:
                             actual = model.outputs()
                             assert actual == oracle, ("aggregate", suffix, cycle, edge, row, actual, oracle)
@@ -242,7 +258,7 @@ if "--aggregate" in sys.argv:
                         enqueue = row["valid"] and oracle["input_ready"] and not (flow and count == 0 and row["ready"])
                         dequeue = count > 0 and row["ready"]
                         if enqueue:
-                            storage[write] = (row["payload"], (left + 1) & 255)
+                            storage[write] = (row["payload"], (left + 1) & payload_mask)
                         if row["reset"]:
                             read, write, count = 0, 0, 0
                         else:
@@ -253,4 +269,4 @@ if "--aggregate" in sys.argv:
                             model.check(lib.rds_advance(model.ptr))
                 for model in models:
                     lib.rds_free(model.ptr)
-    print("16 aggregate Queue configurations passed 256-cycle feedback replay; optimized=" + str("--optimized" in sys.argv))
+    print("16 aggregate Queue configurations passed 256-cycle feedback replay; wide=" + str(wide) + "; optimized=" + str("--optimized" in sys.argv))

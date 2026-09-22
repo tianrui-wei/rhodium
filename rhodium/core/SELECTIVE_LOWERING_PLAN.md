@@ -294,3 +294,15 @@ default native optimization. The independent oracle checks both output elements
 before and after edges. Existing scalar and record native replays pass after the
 runner change. Multiword and nested aggregate captures, effects, pipes,
 performance measurements, and previous simulator-suite migration remain open.
+
+## Captured multiword feedback
+
+The record/vector/multiword host matrix passes 195 checks. A two-element vector
+of 65-bit values spans three runtime words and places its second element at an
+unaligned offset. Sixteen configurations pass 256-cycle pre/post-edge oracle
+replay in interpreter, generated C, and materialized CIRCT/Verilator, including
+default optimization. All payload bits are observed through low/high output
+ports; directed values exercise carry and wraparound alongside random upper bits.
+The existing narrow vector replay still passes with the generalized oracle.
+Nested aggregate captures, effects, retained pipes, performance measurements,
+and previous simulator-suite migration remain open.

@@ -174,3 +174,10 @@ the native and Verilator runners replay that directory against the aggregate
 oracle. This checks vector packing independently of record field packing. Both
 fixtures reject same-element/field feedback when empty bypass creates a cycle.
 The replay's `--aggregate-only` switch permits this group without scalar models.
+
+`mapped-wide-fixture.rhdl` uses two 65-bit vector elements, putting the second
+at an unaligned packed offset and spanning three runtime words. Its external
+ports expose every payload bit as a 64-bit low word and a one-bit high word.
+`RDS_WIDE_DIR` holds these models; the runner's `wide-payload` marker selects the
+matching Verilator bench and `--wide` oracle mode. Directed values exercise
+64-bit carry and 65-bit wraparound alongside random upper bits, reset and stalls.

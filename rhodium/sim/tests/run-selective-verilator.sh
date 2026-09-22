@@ -22,6 +22,9 @@ for mlir in "${mlir_files[@]}"; do
   if [[ "$stem" == aggregate-* ]]; then
     top=AggregateQueue
     bench=aggregate-queue-verilator.cpp
+    if [[ -f "$selective_build/wide-payload" ]]; then
+      bench=wide-queue-verilator.cpp
+    fi
   fi
   verilog="$selective_build/queue-$suffix.sv"
   "$circt_opt" --strip-debuginfo-with-pred='drop-suffix=.mlir' --canonicalize --cse --prettify-verilog \
@@ -34,6 +37,9 @@ for mlir in "${mlir_files[@]}"; do
     "$repo_dir/rhodium/sim/tests/$bench" > "$selective_build/verilator-$suffix.log" 2>&1
 done
 replay_flags=(--compiled --verilator)
+if [[ -f "$selective_build/wide-payload" ]]; then
+  replay_flags+=(--wide)
+fi
 if [[ ! -f "$selective_build/direct-1-0-0.rds" ]]; then
   replay_flags+=(--aggregate-only)
 fi
@@ -50,7 +56,7 @@ if [[ -f "$selective_build/twins-mixed.rds" ]]; then
   replay_flags+=(--twins)
 fi
 python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" "${replay_flags[@]}"
-for child in nested mapped vector; do
+for child in nested mapped vector wide; do
   if [[ -d "$selective_build/$child" ]]; then
     bash "$repo_dir/rhodium/sim/tests/run-selective-verilator.sh" "$selective_build/$child"
   fi

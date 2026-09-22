@@ -418,3 +418,27 @@ failure; the runtime does not promise rollback of arbitrary external systems.
 Broader runtime regression migration, remaining error coverage, and performance
 measurements remain open. Boundary, license, CI-routing, syntax, and whitespace
 checks pass; the host suite includes the new callback group.
+
+## Runtime regression migration: publication and scheduling
+
+Three independent C++ regressions from the previous simulator PR now live under
+`rhodium/sim/tests`: batched-cycle publication/failure, parallel state scheduling,
+and static demand regions. Package-relative includes and license headers are
+updated; the parallel test uses an explicit unsigned flag conversion required by
+the current compiler. Their original transition oracles remain intact.
+
+Validation passes 50 batched kind/mode configurations, six reference/parallel
+scheduling modes over 512 cycles (including eight-worker execution), and 75
+static-demand modes over 1,000 cycles. Coverage includes failed phases, callbacks,
+state-bank parity, reattachment, snapshot-prefix splitting, unique state owners,
+wide values, shared guards, scratch reuse, and strict invalid-selector errors.
+The demand test's generated-library compilation exceeded an initial two-minute
+runner limit; the completed run uses a ten-minute limit for that matrix.
+
+`make sim-runtime-regression-test` provides an isolated entry point, and the
+selective host runner includes these tests using its existing runtime library.
+CI now explicitly installs Clang for generated-code checks. Boundary, license,
+CI-routing, shell syntax, and whitespace checks pass. Remaining migration includes
+compiler optimization, object-family, arithmetic, and frontend-generated fixtures;
+performance measurement remains open. These are focused regression results,
+not a new complete selective-suite baseline.

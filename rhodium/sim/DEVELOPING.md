@@ -239,3 +239,23 @@ within the callback result count. Reject missing slots and combinational host
 query dependencies during extraction rather than at runtime model loading.
 The host replay also rejects a callback after it writes a tentative output,
 verifying that neither this output nor hardware state is published.
+
+## Migrated runtime regression suite
+
+`make sim-runtime-regression-test` invokes
+`tests/run-runtime-regressions.sh`, which builds compiler model helpers once and runs
+package-local tests migrated from the previous simulator PR. It accepts an
+existing runtime build directory, or creates an external build and runtime when
+called without arguments. The selective host entry point invokes it after the
+retained-construct replays.
+
+- `bulk-cycles-test.cpp` compares batched edges with ordinary/reference execution,
+  covering failed phases, callbacks, reset, state-bank parity, and reattachment.
+- `parallel-state-test.cpp` compares snapshot-prefix splitting and independent
+  state owners across component/replicated schedules and eight-worker execution.
+- `regions_test.cpp` compares static-demand and eager execution across narrow/wide
+  state, guards, scratch reuse, and multiple generated-code layouts.
+
+These preserve the original independent oracles. Remaining compiler optimization,
+object-family, arithmetic, and frontend fixture migration is tracked in the
+[selective lowering plan](../core/SELECTIVE_LOWERING_PLAN.md).

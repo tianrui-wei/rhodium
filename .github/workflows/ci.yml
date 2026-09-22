@@ -129,7 +129,7 @@ jobs:
         if: matrix.target == 'ci-host-native-test'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes nlohmann-json3-dev libboost-dev
+          sudo apt-get install --yes clang nlohmann-json3-dev libboost-dev
       - name: Run affected host test group
         run: make "${{ matrix.target }}"
 

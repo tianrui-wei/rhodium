@@ -1,7 +1,7 @@
 # Build and test entry points for Rhodium's Rhombus and CIRCT-based toolchain.
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: sim-selective-test ci-host-native-test
+.PHONY: sim-selective-test sim-runtime-regression-test ci-host-native-test
 .PHONY: sram-test
 .PHONY: setup-verilator
 export PATH := $(CURDIR)/.tools/verilator/bin:$(PATH)
@@ -336,3 +336,6 @@ examples-formal: check-boundaries
 examples-rv5stage:
 	bash tools/check-example-verilog.sh examples/rv5stage
 	tools/run-racket-tests.sh $(RV5STAGE_EXAMPLES)
+
+sim-runtime-regression-test: check-boundaries
+	bash rhodium/sim/tests/run-runtime-regressions.sh

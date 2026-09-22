@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 repo_dir="$(cd "$(dirname "$0")/../../.." && pwd)"
-regression_dir="${1:-$(mktemp -d /tmp/rhodium-runtime-regressions.XXXXXX)}"
+regression_dir="${1:-$(mktemp -d "${TMPDIR:-/tmp}/rhodium-runtime-regressions.XXXXXX")}"
 regression_dir="$(realpath "$regression_dir")"
 selected_tests=("${@:2}")
 if (( ${#selected_tests[@]} == 0 )); then

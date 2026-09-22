@@ -1,0 +1,21 @@
+#lang rhombus
+// Emits actual Flow RTL as the independent reference for native object ABI replay.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../../core/main.rhm" open
+  "../main.rhm" open
+  "../../frontend/kernel.rhm" as frontend
+  "../../../flow/pipe.rhdl" as pipe
+  "../../../flow/broadcast.rhdl" as broadcast
+  "../../../flow/packet-rr-arbiter.rhdl" as packet
+  lib("racket/base.rkt") as rkt
+
+def directory = rkt.getenv("RDS_TEST_DIR")
+for (entry in [[fun (): pipe.ValidPipe(Bits(65), 3), "valid-pipe"],
+               [fun (): broadcast.Broadcast(Bits(65), 3), "broadcast"],
+               [fun (): broadcast.CtrlBroadcast(3), "ctrl-broadcast"],
+               [fun (): packet.PacketRRArbiter(Bits(8), 3), "packet-rr"]]):
+  def top = frontend.run_elaboration_with_top(entry[0]).top
+  write_simulation(compile_simulation(top, ~semantic_kernels: #false),
+                   directory ++ "/" ++ entry[1] ++ "-raw.rsim")

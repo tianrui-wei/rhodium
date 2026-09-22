@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 repo_dir="$(cd "$(dirname "$0")/../../.." && pwd)"
-selective_build="$(mktemp -d /tmp/rhodium-selective-test.XXXXXX)"
-selective_compiled="$(mktemp -d /tmp/rhodium-selective-compiled.XXXXXX)"
+selective_build="$(mktemp -d "${TMPDIR:-/tmp}/rhodium-selective-test.XXXXXX")"
+selective_compiled="$(mktemp -d "${TMPDIR:-/tmp}/rhodium-selective-compiled.XXXXXX")"
 cd "$repo_dir"
 export RDS_HOST_DIR="$selective_build/host"
 mkdir "$RDS_HOST_DIR"
@@ -44,4 +44,5 @@ cp "$selective_build/librhodium_sim.so" "$RDS_HOST_DIR/"
 python3 rhodium/sim/tests/selective-host-runtime.py "$RDS_HOST_DIR"
 bash rhodium/sim/tests/run-runtime-regressions.sh "$selective_build"
 bash rhodium/sim/tests/run-core-regressions.sh
+bash rhodium/sim/tests/run-object-regressions.sh
 printf 'Generated artifacts: %s\n' "$selective_build"

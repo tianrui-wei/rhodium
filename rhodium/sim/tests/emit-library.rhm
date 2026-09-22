@@ -1,0 +1,22 @@
+#lang rhombus
+// Emits ordinary standard-library IR for generic native execution and protocol validation.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../../examples/std/scoreboard.rhdl" as scoreboard
+  "../../../examples/std/flow-control.rhdl" as flow
+  "../../../examples/std/credited-transport.rhdl" as credit
+  lib("racket/base.rkt") as rkt
+
+def directory = rkt.getenv("RDS_TEST_DIR")
+unless directory | error("RDS_TEST_DIR must name the fixture directory")
+for (entry in [[scoreboard.design, "std-scoreboard", "Scoreboard"], [flow.queue_design, "std-queue", "Queue"],
+               [flow.queue_one_design, "std-queue-one", "Queue"], [flow.queue_options_design, "std-queue-options", "Queue"],
+               [flow.pipe_design, "std-pipe", "Pipe"], [flow.arbiter_design, "std-arbiter", "Arbiter"],
+               [credit.design, "std-credit", "CreditedRoundTrip"]]):
+  def top = entry[0].modules.find(fun (m): m.name == entry[2])
+  for (kernels in [#false, #true]):
+    def suffix = if kernels | "" | "-raw"
+    def model = compile_simulation(top, ~semantic_kernels: kernels)
+    write_simulation(model, directory ++ "/" ++ entry[1] ++ suffix ++ ".rsim")

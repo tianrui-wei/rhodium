@@ -328,3 +328,34 @@ generated commands, and optional static machine-code reports. Its migrated
 `tests/inspection_test.py` uses the core fixture batch to check shared lookups,
 sparse/default decoder selection, source provenance, and real compiler-output
 disassembly. The core regression runner includes this inspection gate.
+
+## Native object and replication regression suite
+
+`make sim-object-regression-test` runs `tests/run-object-regressions.sh` with a
+fresh compiled root. The selective host runner includes this gate. All simulator
+runner artifact roots honor `TMPDIR`, allowing validation on a filesystem with
+available quota without writing generated files into the checkout.
+`emit-object-models.py` constructs explicit runtime object ABI fixtures; it does
+not identify library bodies after expansion. `emit-object-rtl.rhm` independently
+compiles the actual Flow implementations as generic RTL references. Preserve
+these two fixture paths so native-versus-RTL comparisons remain independent.
+
+`native_objects_test.py` retains the previous protocol oracles and descriptor
+rejection checks in interpreter and generated-C modes. It covers FIFO payload
+widths 8/65/4096 and depths 1/3/1024, payload-free control variants, offers,
+round-robin/packet arbitration, valid-only pipes, and broadcasts. These explicit
+payload-free ABI fixtures do not authorize dropping observable payloads from
+a public construct contract.
+
+`emit-replication.rhm` retains byte/work-budget checks and ordinary shared-cone
+fixtures. Its package-local `shared-query-fixture.rhdl` elaborates retained Queue
+and selects `QueueNative`; replication must preserve one Queue update owner
+while splitting independent query consumers. Runtime replay checks bounded
+replication, automatic scheduling, reset, and shared-state recurrence.
+
+The same runner emits the canonical standard-library examples with
+`emit-library.rhm` and replays `library_test.py`. These examples exercise generic
+core-IR fallback, including scoreboard diagnostics, queue options, pipe latency,
+arbitration, and credited transport. They do not claim direct target registrations
+for every library construct. Raw, optimized, parallel, generated-C, and supported
+x86 assembly execution retain the original independent protocol oracles.

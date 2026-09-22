@@ -1,7 +1,7 @@
 # Build and test entry points for Rhodium's Rhombus and CIRCT-based toolchain.
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: sim-selective-test sim-runtime-regression-test sim-core-regression-test ci-host-native-test
+.PHONY: sim-selective-test sim-runtime-regression-test sim-core-regression-test sim-object-regression-test ci-host-native-test
 .PHONY: sram-test
 .PHONY: setup-verilator
 export PATH := $(CURDIR)/.tools/verilator/bin:$(PATH)
@@ -342,3 +342,6 @@ sim-runtime-regression-test: check-boundaries
 
 sim-core-regression-test: check-boundaries
 	bash rhodium/sim/tests/run-core-regressions.sh
+
+sim-object-regression-test: check-boundaries
+	bash rhodium/sim/tests/run-object-regressions.sh

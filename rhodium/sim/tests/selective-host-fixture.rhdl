@@ -1,0 +1,38 @@
+#lang rhodium
+// Declares repeated retained host-effect occurrences beside a guarded hardware register.
+// SPDX-License-Identifier: Apache-2.0
+
+def HostConstruct = ConstructIdentity("test.host-effect", 1)
+sync_circuit HostEffect():
+  input a: Bits(64)
+  input b: Bits(64)
+  output result: Bits(64)
+  def spec = construct_signature(
+    HostConstruct, {}, fun (output): [],
+    ~clocks: ["clock"], ~resets: [ConstructReset("reset", "clock", "synchronous", #true)],
+    ~effects: [ConstructEffect("state", "state", "clock"), ConstructEffect("host", "dpi", "clock")])
+  implementation(~construct: spec):
+    error("selected host implementation must not execute portable sentinel")
+
+sync_circuit HostEffects():
+  input a: Bits(64)
+  input b: Bits(64)
+  input permit: Bool
+  output first_result: Bits(64)
+  output second_result: Bits(64)
+  output phase: Bits(8)
+  reg count(~init: bits(0, 8))
+  count <== count + bits(1, 8)
+  phase <== count
+  assert(permit, "permit_host_effect")
+  inst first(HostEffect())
+  inst second(HostEffect())
+  first.a <== a
+  first.b <== b
+  second.a <== b
+  second.b <== a
+  first_result <== first.result
+  second_result <== second.result
+
+fun elaborate_host(): elaborate_with_top(HostEffects(), ~constructs: #true)
+export elaborate_host HostConstruct

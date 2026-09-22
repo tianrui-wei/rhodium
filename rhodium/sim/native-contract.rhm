@@ -59,6 +59,13 @@ fun verify_native_implementation(implementation :: NativeImplementation, contrac
     unless model.width > 0 && model.flags < 8 | fail("unsupported native queue width or flags")
     for (input in model.inputs, expected in [1, 1, model.width, 1]):
       unless input && input[2] == expected | fail("native queue input width differs from execution ABI")
+  when model is_a NativeModel && model.kind == 8
+  | unless model.inputs.length() == 5 && (for all (input in model.inputs): input && input[2] <= 64)
+    | fail("native host requires five bound word inputs")
+    unless model.flags == 0 | fail("native host does not support flags")
+    unless contract.clocks.length() == 1 && contract.resets.length() == 1
+        && model.inputs[0] == [contract.resets[0].port, 0, 1]
+    | fail("native host reset input does not match its single-clock contract")
   fun overlaps(a, aw, b, bw): a < b + bw && b < a + aw
   def covered = MutableMap{}
   for (output in model.outputs):
@@ -73,6 +80,9 @@ fun verify_native_implementation(implementation :: NativeImplementation, contrac
     unless query_width is_a PosInt && output.query_low + output.width <= query_width
     | fail("native output exceeds query width")
     when model is_a NativeFunction && output.query != 0 | fail("pure native function exposes only query zero")
+    when model is_a NativeModel && model.kind == 8
+    | unless output.query < model.depth && query_width <= 64 && output.dependencies == []
+      | fail("native host query must read a registered output word")
     when model is_a NativeModel && model.kind == 1
     | unless output.query < 4
       | fail("unsupported native queue query")

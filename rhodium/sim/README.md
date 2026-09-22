@@ -149,3 +149,11 @@ interpreted and compiled modes, including optimization. Rejected edges preserve
 register/Queue state and diagnostic cycle numbers; retry matches execution that
 never attempted the rejected edges. Reset and disabled guards suppress checks.
 External callback effects require separate validation.
+
+Explicit retained host adapters use five bound word inputs and registered output
+queries. Lowering verifies their clock/reset association and output ABI before
+emission. The repeated-host regression passes 256 edges in interpreter and
+generated C, with and without optimization: each accepted edge invokes each
+occurrence once, while evaluation and failed hardware preflight invoke none.
+A failed callback's tentative output is not published. External effects already
+performed by a callback cannot be rolled back; callbacks own that responsibility.

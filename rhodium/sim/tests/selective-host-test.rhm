@@ -1,0 +1,42 @@
+#lang rhombus
+// Selects native host effects by nominal identity and checks repeated occurrence preservation.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../objects.rhm" open
+  "../native-contract.rhm".verify_native_implementation
+  "../../core/main.rhm" open
+  "selective-host-fixture.rhdl" open
+  lib("racket/base.rkt") as rkt
+
+def HostNative = TargetLowering(
+  HostConstruct, "native", fun (occurrence): #true,
+  fun (spec, occurrence):
+    NativeImplementation(
+      spec.contract,
+      NativeModel(
+        8, 64, 1, 0,
+        [["reset", 0, 1], ["a", 0, 64], ["b", 0, 64], ["a", 0, 64], ["b", 0, 64]],
+        [NativeOutput("result", 0, 64, 0, [])]),
+      ["state", "host"]))
+def destination = rkt.getenv("RDS_HOST_DIR")
+for (optimized in [#false, #true]):
+  def model = compile_simulation(elaborate_host(), ~lowerings: [HostNative], ~optimize: optimized)
+  check:
+    model.objects.length() ~is 2
+    model.checks.length() ~is 1
+    model.objects[0].last == model.objects[1].last ~is #false
+  when destination
+  | def name = (if optimized | "optimized" | "direct")
+    write_simulation(model, destination ++ "/" ++ name ++ ".rds")
+    filesystem.write_bytes(destination ++ "/" ++ name ++ ".names", String.join(model.objects.map(fun (object): object.last), "\n").utf8_bytes(), ~exists: #'truncate)
+
+// Malformed host ABI must fail during lowering, before binary loading.
+def source = elaborate_host()
+def declaration = source.design.find_module_named("HostEffect").operations.find(fun (op): op.opcode == "construct.apply").attribute("specialization")
+def malformed = NativeImplementation(
+  declaration.contract,
+  NativeModel(8, 64, 1, 0, [["reset", 0, 1], ["a", 0, 64], ["b", 0, 64], #false, #false], [NativeOutput("result", 0, 64, 0, [])]),
+  ["state", "host"])
+check: verify_native_implementation(malformed, declaration.contract, "host-test") ~throws "five bound word inputs"

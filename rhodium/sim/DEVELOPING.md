@@ -216,3 +216,26 @@ attempted those edges. Diagnostic cycle numbers, register phase, Queue outputs,
 reset/guard suppression, and future drain behavior expose premature publication.
 The shared runner emits models under `RDS_EFFECTS_DIR` and runs this replay.
 This gate does not establish arbitrary external callback semantics.
+
+## Retained external host effects
+
+`tests/selective-host-fixture.rhdl` declares two occurrences of one host-effect
+construct. Its native provider binds the explicit host ABI; the portable sentinel
+must never execute. `selective-host-runtime.py` binds occurrence callbacks and
+checks registered 64-bit results, argument order, reset handling, and exactly one
+invocation per occurrence on accepted edges. Repeated evaluation, failed
+assertions, and an unbound later sibling must invoke no callbacks. Test both
+interpreter and generated C, with and without optimization. The host entry point
+emits this group under `RDS_HOST_DIR`.
+
+Hardware preflight completes before callbacks run. Callback authors own external
+side effects: a callback error cannot undo effects already performed by that
+callback or an earlier sibling. Do not describe hardware-state retry guarantees
+as transactional rollback of arbitrary external systems.
+
+Host ABI verification requires five bound input words, the declared reset in
+slot zero, one clock/reset association, no flags, and registered output queries
+within the callback result count. Reject missing slots and combinational host
+query dependencies during extraction rather than at runtime model loading.
+The host replay also rejects a callback after it writes a tentative output,
+verifying that neither this output nor hardware state is published.

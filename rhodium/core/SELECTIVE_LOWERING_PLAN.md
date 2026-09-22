@@ -399,3 +399,22 @@ numbers, future drain, and reset/guard suppression. The host entry point now
 includes this effects group. Boundary, license, CI-routing, Python/shell syntax,
 and whitespace checks pass. External callback effects, broader runtime regression
 migration, and performance measurements remain open.
+
+## Retained external host effects
+
+The dependent native path now validates the host ABI before emission: five bound
+word inputs, declared reset, one clock/reset association, no flags, and registered
+output queries within the result count. Thirty focused host/native/Queue contract
+checks pass, including malformed-slot rejection. Repeated instances of one
+retained host construct select native adapters without executing a portable
+sentinel. Four 256-edge interpreter/generated-C traces, with and without
+optimization, check per-occurrence callback counts, 64-bit arguments/results,
+reset, and suppression during evaluation and failed assertions or missing sibling
+bindings. A callback that writes a tentative output and fails publishes neither
+that output nor hardware state; subsequent execution succeeds.
+
+Callbacks remain responsible for external effects they perform before returning
+failure; the runtime does not promise rollback of arbitrary external systems.
+Broader runtime regression migration, remaining error coverage, and performance
+measurements remain open. Boundary, license, CI-routing, syntax, and whitespace
+checks pass; the host suite includes the new callback group.

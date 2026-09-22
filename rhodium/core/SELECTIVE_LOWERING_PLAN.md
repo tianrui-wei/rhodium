@@ -116,3 +116,24 @@ executable construct protocol. No end-to-end native milestone is claimed.
 - Connect native Queue and generic RTL to the shared simulation schedule
   and run the three-way differential gate. The hardware-only fixture is not
   evidence for the native implementation.
+
+## Dependent native integration evidence
+
+The `selective-native` worktree restores the existing private simulation
+compiler/runtime and replaces probe-based model registration with public
+construct selection. The first scalar Queue milestone passes 80 extraction
+checks across 16 depth/pipe/flow configurations: the selected portable body
+executes zero times, while expanded extraction executes it once. Each Queue
+connects to ordinary arithmetic, control gating, and a register in one execution
+model. Direct and expanded models match an independent 512-cycle pre/post-edge
+oracle in interpreter and generated-C modes, and CIRCT/Verilator matches the
+same vectors. Seven additional checks establish per-occurrence choices and
+expansion caching for repeated Queue definitions. Independent paired runtime
+replay passes 256 cycles for direct, mixed, and expanded choices in interpreter
+and generated-C modes.
+
+This evidence does not finish gates 4–6. Native contract/range/dependency
+validation, aggregate feedback, nested composition extraction, typed payload
+regions, broader effect/error cases, performance measurements, and migration of
+the previous simulator regression suite remain. Simulator changes stay in this
+dependent branch; the IR PR remains free of compiler/runtime sources.

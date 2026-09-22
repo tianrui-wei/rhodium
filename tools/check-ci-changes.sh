@@ -308,6 +308,11 @@ while IFS= read -r path; do
   esac
 done < <(git -C "$repo_dir" ls-files)
 
+check_matrix_entry rhodium/sim/extract.rhm host_matrix ci-host-native-test
+check_matrix_entry rhodium/sim/runtime/objects.c host_matrix ci-host-native-test
+check_matrix_entry sims/native/queue.rhm host_matrix ci-host-native-test
+check_matrix_entry flow/queue.rhdl host_matrix ci-host-native-test
+
 all_jobs="$($classifier --all)"
 if [[ "$(field_value "$all_jobs" host)" != true \
     || "$(field_value "$all_jobs" circt)" != true \

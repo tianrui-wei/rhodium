@@ -1,6 +1,7 @@
 # Build and test entry points for Rhodium's Rhombus and CIRCT-based toolchain.
 # SPDX-License-Identifier: Apache-2.0
 
+.PHONY: sim-selective-test ci-host-native-test
 .PHONY: sram-test
 .PHONY: setup-verilator
 export PATH := $(CURDIR)/.tools/verilator/bin:$(PATH)
@@ -13,6 +14,7 @@ export PATH := $(CURDIR)/.tools/verilator/bin:$(PATH)
 RISCV_UDB_CONFIGURATION ?= single-core-rv5stage-soc
 RISCV_UDB_OUTPUT ?= /tmp/rhodium-udb/$(RISCV_UDB_CONFIGURATION).yaml
 
+SIM_TESTS := $(sort $(wildcard rhodium/sim/tests/*-test.rhm))
 CORE_TESTS := $(sort $(wildcard rhodium/core/tests/*-test.rhm))
 ANALYSIS_TESTS := $(sort $(wildcard rhodium/analysis/tests/*-test.rhm))
 SUPPORT_ANNOTATION_TESTS := $(sort $(wildcard support/tests/*-test.rhm))
@@ -48,7 +50,7 @@ FORMAL_EXAMPLES := $(sort $(shell find examples/formal -type f \( -name '*.rhm' 
 RV5STAGE_EXAMPLES := $(sort $(shell find examples/rv5stage -type f \( -name '*.rhm' -o -name '*.rhdl' \)))
 EXAMPLES := $(sort $(shell find examples -path examples/formal -prune -o -type f \( -name '*.rhm' -o -name '*.rhdl' \) -print) $(RFPL_EXAMPLES))
 RACKET_COMPILE_SOURCES := $(sort \
-  $(SUPPORT_ANNOTATION_TESTS) $(CORE_TESTS) $(ANALYSIS_TESTS) $(FRONTEND_TESTS) \
+  $(SIM_TESTS) $(SUPPORT_ANNOTATION_TESTS) $(CORE_TESTS) $(ANALYSIS_TESTS) $(FRONTEND_TESTS) \
   $(STD_TESTS) $(FLOW_TESTS) $(EVENT_TESTS) $(DIAGRAM_TESTS) $(BACKEND_TESTS) \
   $(RFPL_TESTS) $(DEVICETREE_TESTS) devicetree/tests/write-fixture.rhm $(NOC_TESTS) $(RISCV_TESTS) \
   $(DEVICE_TESTS) $(CHI_TESTS) $(SOC_TESTS) $(HARDFLOAT_TESTS) $(PROCESSOR_TESTS) $(EXAMPLES) \
@@ -258,6 +260,11 @@ update-verilog-goldens:
 host-checks: check-license-headers check-parameter-annotations support-annotation-test devicetree-test unit-test rfpl-unit-test noc-test riscv-test device-test chi-test soc-test hardfloat-host-test rv5stage-host-test
 
 ci-host-foundation-test: support-annotation-test frontend-test lop-test
+
+ci-host-native-test: sim-selective-test
+
+sim-selective-test: check-boundaries
+	bash rhodium/sim/tests/run-selective.sh
 
 ci-host-backend-test: backend-test
 

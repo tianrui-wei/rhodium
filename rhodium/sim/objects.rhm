@@ -1,0 +1,25 @@
+#lang rhombus
+// Defines explicit occurrence-level native model contracts and per-output dependencies.
+// SPDX-License-Identifier: Apache-2.0
+
+export:
+  NativeModel
+  NativeFunction
+  NativeOutput
+  NativeImplementation
+
+import "../core/main.rhm" open
+
+// Inputs are [port_name, low_bit, width], or #false for an omitted payload.
+// Each output describes one disjoint leaf and the exact input slots it reads.
+class NativeOutput(port :: String, low :: Nat, width :: PosInt, query :: Nat, dependencies :: List,
+                   query_low :: Nat = 0, query_width = #false)
+class NativeModel(kind :: PosInt, width :: Nat, depth :: PosInt, flags :: Nat,
+                  inputs :: List, outputs :: List)
+// A pure replacement emits an operation; it owns no state or publication work.
+class NativeFunction(opcode :: Nat, inputs :: List, outputs :: List, immediates :: List = [])
+
+// A target adapter names the public contract and the effects its implementation preserves.
+class NativeImplementation(contract :: ConstructContract,
+                           model :: NativeModel || NativeFunction,
+                           effects :: List.of(String))

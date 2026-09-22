@@ -55,8 +55,10 @@ fail_test_matches() {
   fi
 }
 
-fail_matches "core must not import analysis, frontend, backend, or formal modules" \
-  '^[[:space:]]+"[^"]*(analysis|frontend|backend|formal)/' rhodium/core
+fail_matches "core must not import analysis, frontend, backend, formal, or simulator modules" \
+  '^[[:space:]]+"[^"]*(analysis|frontend|backend|formal|sim)/' rhodium/core
+fail_matches "simulator must not import frontend, libraries, or backends" \
+  '^[[:space:]]+"[^"]*(frontend|flow|std|backend|sims)/' rhodium/sim
 fail_matches "analysis must depend only on core and other analysis modules" \
   '^[[:space:]]+"[^"]*(frontend|backend|formal|std)/' rhodium/analysis
 fail_matches "support annotations must remain dependency-neutral" \

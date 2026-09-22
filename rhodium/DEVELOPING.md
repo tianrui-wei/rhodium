@@ -40,6 +40,7 @@ flowchart LR
   Clocking["clocking layer"] --> Analysis["analysis/*"]
   Analysis --> Core
 
+  Simulation["sim/*"] --> Core
   Backend["backend/*"] --> Core
   Formal["formal/*"] --> Core
   Diagram["diagram/*"] --> Core
@@ -440,3 +441,12 @@ The equivalence tests under [`frontend/tests/`](frontend/tests/) and
 [`backend/tests/`](backend/tests/) check that direct core construction,
 kernel construction, explicit layer composition, and the standard language
 produce the same public IR and CIRCT representation.
+
+## Native consumer integration
+
+`sim/extract.rhm` and `sim/objects.rhm` import only `core/main.rhm` for
+public hardware and construct contracts. The remaining simulator modules
+import sibling simulator modules and Racket/Rhombus libraries. The standalone
+compiler and runtime have no frontend dependencies. `sims/native/queue.rhm`
+imports the public Flow Queue identity, core contracts, and simulator target
+records; the generic extractor never imports Flow.

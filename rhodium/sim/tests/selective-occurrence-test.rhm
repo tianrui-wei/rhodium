@@ -1,0 +1,37 @@
+#lang rhombus
+// Checks independent target choices for repeated Queue definitions and emits paired runtime fixtures.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../core/main.rhm" open
+  "../../../sims/native/queue.rhm".QueueNative
+  "../../../flow/tests/retained-queue-fixture.rhdl" open
+  lib("racket/base.rkt") as rkt
+
+def first_only = TargetLowering(QueueConstruct, "native", fun (occurrence): occurrence.name.contains("/first/"), QueueNative.lower)
+def mutable expansions = 0
+def provider = ExpansionProvider(
+  QueueConstruct,
+  fun (specification):
+    expansions := expansions + 1
+    QueueExpansion.expand(specification))
+def direct = compile_simulation(twins, ~lowerings: [QueueNative], ~expansions: [provider], ~optimize: #false)
+check:
+  expansions ~is 0
+  direct.objects.length() ~is 2
+def mixed = compile_simulation(twins, ~lowerings: [first_only], ~expansions: [provider], ~optimize: #false)
+check:
+  expansions ~is 1
+  mixed.objects.length() ~is 1
+  mixed.objects[0][5].contains("/first/") ~is #true
+def portable = compile_simulation(twins, ~expansions: [provider], ~optimize: #false)
+check:
+  expansions ~is 2
+  portable.objects.length() ~is 0
+
+def destination = rkt.getenv("RDS_TEST_DIR")
+when destination
+| write_simulation(direct, destination ++ "/twins-direct.rds")
+  write_simulation(mixed, destination ++ "/twins-mixed.rds")
+  write_simulation(portable, destination ++ "/twins-expanded.rds")

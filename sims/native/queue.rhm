@@ -1,0 +1,27 @@
+#lang rhombus
+// Registers direct Queue simulation by its retained construct identity, without portable body probing.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../../rhodium/core/main.rhm" open
+  "../../rhodium/sim/objects.rhm" open
+  "../../flow/queue.rhdl".QueueConstruct
+
+export QueueNative
+
+def QueueNative = TargetLowering(
+  QueueConstruct, "native", fun (occurrence): #true,
+  fun (specialization, occurrence):
+    def parameters = specialization.parameters
+    def width = parameters["payload"].packed_width()
+    def pipe = parameters["pipe"]
+    def flow = parameters["flow"]
+    def count = specialization.contract.ports.find(fun (port): port.name == "count")
+    def model = NativeModel(
+      1, width, parameters["depth"], (if pipe | 2 | 0) bits.or (if flow | 4 | 0),
+      [["reset", 0, 1], ["ingress_in", width, 1], ["ingress_in", 0, width], ["egress_in", 0, 1]],
+      [NativeOutput("count", 0, count.type.packed_width(), 0, []),
+       NativeOutput("ingress_out", 0, 1, 1, if pipe | [3] | []),
+       NativeOutput("egress_out", 0, width, 3, if flow | [2] | []),
+       NativeOutput("egress_out", width, 1, 2, if flow | [1] | [])])
+    NativeImplementation(specialization.contract, model, specialization.contract.effects.map(fun (effect): effect.name)))

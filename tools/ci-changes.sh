@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 
+host_native=false
 host_foundation=false
 host_backend=false
 host_models=false
@@ -34,6 +35,7 @@ example_cores=false
 example_rv5stage=false
 
 mark_all_host() {
+  host_native=true
   host_foundation=true
   host_backend=true
   host_models=true
@@ -108,6 +110,10 @@ emit_jobs() {
   local program_matrix=""
   local programs=false
 
+  if [[ "$host_native" == true ]]; then
+    host=true
+    append_matrix_entry host_matrix '{"name":"native simulation","target":"ci-host-native-test"}'
+  fi
   if [[ "$host_foundation" == true ]]; then
     host=true
     append_matrix_entry host_matrix '{"name":"foundation","target":"ci-host-foundation-test"}'
@@ -202,6 +208,7 @@ classify_path() {
   # of host/CIRCT grouping. More specific suite paths must precede broad roots.
   case "$path" in
     *.md|LICENSE|LICENSE.*|NOTICE|DCO|AGENTS.md|.gitignore|.gitattributes|tools/emacs/*) ;;
+    sims/native/*) ;;
     sims/program-test/isa.mk) program_isa=true ;;
     sims/program-test/build-coremark.py|sims/program-test/coremark-riscv-baremetal/*|sims/program-test/coremark|sims/program-test/coremark/*)
       program_coremark=true ;;
@@ -215,6 +222,11 @@ classify_path() {
       program_isa=true; program_benchmark=true ;;
     rhodium/core/*|rhodium/frontend/*|rhodium/base/*|rhodium/std/*|rhodium/backend/*|rhodium/language.rhm|rhodium/main.rkt|flow/*|cores/*|riscv/*|hardfloat/*|chi/*|noc/*|devices/*|socs/*|sims/*|support/annotations.rhm|devicetree/*|tools/install-circt.sh|tools/install-riscv-toolchain.sh|.github/actions/setup-riscv-toolchain/*)
       mark_all_programs ;;
+  esac
+  case "$path" in
+    *.md|AGENTS.md) ;;
+    rhodium/sim/*|sims/native/*|rhodium/core/*|rhodium/frontend/*|rhodium/backend/*|rhodium/std/*|flow/*|support/*)
+      host_native=true ;;
   esac
   case "$path" in
     tools/emacs/*)
@@ -433,6 +445,9 @@ classify_path() {
     sims/fesvr/*.rhdl)
       circt_protocols=true
       simulation=true
+      ;;
+    rhodium/sim/*|sims/native/*)
+      host_native=true
       ;;
     sims/*)
       simulation=true

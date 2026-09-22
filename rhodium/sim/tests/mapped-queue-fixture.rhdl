@@ -1,0 +1,36 @@
+#lang rhodium
+// Places captured payload maps around a retained Queue under shared clocked state.
+// SPDX-License-Identifier: Apache-2.0
+
+import lib("flow/queue.rhdl") open
+import lib("flow/map.rhdl") open
+
+sync_circuit MixedSelective(depth :: PosInt, pipe :: Boolean, flow :: Boolean):
+  input payload: Bits(8)
+  input valid: Bool
+  input ready: Bool
+  input enable: Bool
+  output input_ready: Bool
+  output output_valid: Bool
+  output output_payload: Bits(8)
+  output occupancy: Bits(index_width(depth + 1))
+  output phase: Bits(8)
+  reg offset(~init: bits(1, 8))
+  offset <== offset + bits(1, 8)
+  inst queue_instance(Queue(Bits(8), depth, ~pipe: pipe, ~flow: flow))
+  def input_map = Bits(8) |> map_flow(value => value + offset)
+  input_map.left.valid <== valid & enable
+  input_map.left.bits <== payload
+  input_map.right |> queue_instance.ingress
+  def output_map = queue_instance.egress |> map_flow(value => value ^ offset)
+  output_map.ready <== ready
+  input_ready <== input_map.left.ready & enable
+  output_valid <== output_map.valid
+  output_payload <== output_map.bits
+  occupancy <== queue_instance.count
+  phase <== offset
+
+fun elaborate_mixed(depth, pipe, flow):
+  elaborate_with_top(MixedSelective(depth, pipe, flow), ~constructs: #true)
+
+export elaborate_mixed

@@ -247,3 +247,25 @@ remain required. The simulator sources stay on the dependent branch.
 
 The ordinary `flow-map --full` fixture also passes its exact SystemVerilog
 reference comparison and existing simulation after the shared macro change.
+
+## Native captured-map execution
+
+The dependent native branch now includes the public payload/capture and retained
+Flow map implementation. Its new fixture places maps before and after Queue,
+with both capturing a register that advances on every edge. Across 16
+configurations, 128 host checks verify retained regions and skipped Queue
+expansion. Direct, expanded, and default-optimized native models match the
+independent 512-cycle pre/post-edge oracle in interpreter and generated-C modes;
+materialized CIRCT/Verilator matches the same vectors.
+
+This validates live captured computation across Queue's shared state schedule,
+including reset, stalls, empty bypass, full replacement, wraparound, and defined
+invalid payloads. Broader aggregate/vector mapping, effects, additional
+higher-order constructs, performance measurements, and simulator-suite migration
+remain open. The IR-only PR continues to exclude simulator sources.
+
+The complete updated `make sim-selective-test` entry point passes 517 host checks
+and all scalar, aggregate, nested, repeated-instance, and mapped interpreter/
+generated-C replays. The mapped matrix additionally passes the CIRCT/Verilator
+runner with default-optimized native models included. Boundary, license, and
+CI-routing checks pass.

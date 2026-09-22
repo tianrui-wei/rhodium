@@ -107,7 +107,12 @@ Queue matrix checks two enclosing levels, leaf-wise wiring, skipped expansion,
 scalar and aggregate feedback, and independent choices for repeated instances.
 Scalar and aggregate cases match interpreter, generated C, and materialized
 CIRCT/Verilator; aggregate cases also cover the default native optimizer.
-Higher-order payload regions remain pending. [Implementation rules](DEVELOPING.md) describe
+Captured `map_flow` regions run through generic computation lowering alongside
+selected Queue state. Sixteen configurations with maps before and after Queue
+match interpreter, generated C, and CIRCT/Verilator for 512 cycles, including
+default native optimization. The capture is a register that changes on every
+edge, including stalls. Broader aggregate/vector mapping and effects coverage
+remain pending. [Implementation rules](DEVELOPING.md) describe
 publication, ownership and focused validation.
 
 Native implementations must completely cover each output port with disjoint

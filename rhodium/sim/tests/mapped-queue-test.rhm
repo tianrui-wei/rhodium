@@ -1,0 +1,47 @@
+#lang rhombus
+// Checks retained payload maps around native and expanded Queue state and emits differential models.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../core/main.rhm" open
+  "../../backend/circt.rhm".emit_circt
+  "../../../sims/native/queue.rhm".QueueNative
+  "../../../flow/queue.rhdl" open
+  "../../../flow/map.rhdl".MapConstruct
+  "../../../flow/map.rhdl".MapExpansion
+  "mapped-queue-fixture.rhdl".elaborate_mixed
+  lib("racket/base.rkt") as rkt
+
+def destination = rkt.getenv("RDS_MAP_DIR")
+for (depth in [1, 2, 3, 8]):
+  for (pipe in [#false, #true]):
+    for (flow in [#false, #true]):
+      def source = elaborate_mixed(depth, pipe, flow)
+      def maps = source.top.operations.filter(~keep: fun (op): op.opcode == "construct.apply" && op.attribute("specialization").identity === MapConstruct)
+      check: maps.length() ~is 2
+      for (operation in maps):
+        check: operation.attribute("specialization").parameters["payload"].captures.length() ~is 1
+      def mutable expanded = 0
+      def provider = ExpansionProvider(
+        QueueConstruct,
+        fun (specification):
+          expanded := expanded + 1
+          QueueExpansion.expand(specification))
+      def direct = compile_simulation(source, ~expansions: [provider, MapExpansion], ~lowerings: [QueueNative], ~optimize: #false)
+      check:
+        expanded ~is 0
+        direct.objects.length() ~is 1
+        direct.registers.length() ~is 1
+      def portable = compile_simulation(source, ~expansions: [provider, MapExpansion], ~optimize: #false)
+      check:
+        expanded ~is 1
+        portable.objects.length() ~is 0
+      when destination
+      | def suffix = to_string(depth) ++ "-" ++ (if pipe | "1" | "0") ++ "-" ++ (if flow | "1" | "0")
+        write_simulation(direct, destination ++ "/direct-" ++ suffix ++ ".rds")
+        write_simulation(portable, destination ++ "/expanded-" ++ suffix ++ ".rds")
+        def optimized = compile_simulation(source, ~expansions: [MapExpansion], ~lowerings: [QueueNative])
+        write_simulation(optimized, destination ++ "/optimized-" ++ suffix ++ ".rds")
+        def materialized = materialize_constructs(source, [QueueExpansion, MapExpansion]).elaboration
+        filesystem.write_bytes(destination ++ "/queue-" ++ suffix ++ ".mlir", emit_circt(materialized.design).utf8_bytes(), ~exists: #'truncate)

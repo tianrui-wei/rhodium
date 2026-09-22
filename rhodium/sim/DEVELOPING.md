@@ -139,3 +139,19 @@ input field; it detects false whole-payload cycles and swapped packed ranges.
 Run the contract rejection tests, aggregate replay, and the default optimizer
 path when changing this representation. CI installs the standalone compiler's
 JSON and Boost headers for the native host lane.
+
+## Captured map replay
+
+`tests/mapped-queue-fixture.rhdl` retains maps on both sides of Queue. Each map
+captures the same independently advancing register. `MapExpansion` supplies
+handshake wiring plus generic core computation; Queue still selects its native
+model before its portable body executes. No mapper-specific runtime callback or
+extra state scheduler is introduced.
+
+The mapped fixture preserves the existing scalar oracle's mathematical behavior,
+so it reuses the same 512-cycle pre/post-edge stimuli, resets, stalls, wraparound,
+and invalid payload comparisons. `mapped-queue-test.rhm` emits direct, expanded,
+and default-optimized models under `RDS_MAP_DIR`. The host entry point creates
+that directory as `mapped/`, and the Verilator runner descends into it. The
+`--scalar-optimized` replay option includes optimized models in both interpreter
+and generated-C modes. Keep generated artifacts outside the worktree.

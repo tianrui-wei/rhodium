@@ -7,7 +7,13 @@ selective_build="${1:?usage: run-selective-verilator.sh GENERATED_MODEL_DIRECTOR
 selective_build="$(cd "$selective_build" && pwd)"
 circt_opt="${CIRCT_OPT:-$repo_dir/.tools/firtool-1.155.0/bin/circt-opt}"
 cd "$repo_dir"
-for mlir in "$selective_build"/queue-*.mlir "$selective_build"/aggregate-*.mlir; do
+shopt -s nullglob
+mlir_files=("$selective_build"/queue-*.mlir "$selective_build"/aggregate-*.mlir)
+if (( ${#mlir_files[@]} == 0 )); then
+  echo "No Queue fixtures found in $selective_build" >&2
+  exit 1
+fi
+for mlir in "${mlir_files[@]}"; do
   stem="${mlir##*/}"
   stem="${stem%.mlir}"
   top=MixedSelective
@@ -27,11 +33,22 @@ for mlir in "$selective_build"/queue-*.mlir "$selective_build"/aggregate-*.mlir;
     -Mdir "$selective_build/verilator-$suffix" -j 2 "$verilog" \
     "$repo_dir/rhodium/sim/tests/$bench" > "$selective_build/verilator-$suffix.log" 2>&1
 done
-replay_flags=(--compiled --verilator --aggregate --optimized)
+replay_flags=(--compiled --verilator)
+if [[ -f "$selective_build/aggregate-direct-1-0-0.rds" ]]; then
+  replay_flags+=(--aggregate)
+fi
+if [[ -f "$selective_build/aggregate-optimized-1-0-0.rds" ]]; then
+  replay_flags+=(--optimized)
+fi
+if [[ -f "$selective_build/optimized-1-0-0.rds" ]]; then
+  replay_flags+=(--scalar-optimized)
+fi
 if [[ -f "$selective_build/twins-mixed.rds" ]]; then
   replay_flags+=(--twins)
 fi
 python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" "${replay_flags[@]}"
-if [[ -d "$selective_build/nested" ]]; then
-  bash "$repo_dir/rhodium/sim/tests/run-selective-verilator.sh" "$selective_build/nested"
-fi
+for child in nested mapped; do
+  if [[ -d "$selective_build/$child" ]]; then
+    bash "$repo_dir/rhodium/sim/tests/run-selective-verilator.sh" "$selective_build/$child"
+  fi
+done

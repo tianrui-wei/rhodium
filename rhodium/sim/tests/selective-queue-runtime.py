@@ -70,6 +70,10 @@ for depth in [1, 2, 3, 8]:
             variants = [("direct", False), ("expanded", False)]
             if "--compiled" in sys.argv:
                 variants += [("direct", True), ("expanded", True)]
+            if "--scalar-optimized" in sys.argv:
+                variants += [("optimized", False)]
+                if "--compiled" in sys.argv:
+                    variants += [("optimized", True)]
             models = [Model(f"{kind}-{suffix}.rds", compiled) for kind, compiled in variants]
             seed = 0xC0FFEE + depth * 4 + pipe * 2 + flow
             random_source = random.Random(seed)
@@ -134,7 +138,7 @@ for depth in [1, 2, 3, 8]:
                         model.check(lib.rds_advance(model.ptr))
             for model in models:
                 lib.rds_free(model.ptr)
-print("16 mixed Queue configurations passed 512-cycle pre/post-edge replay; compiled=" + str("--compiled" in sys.argv) + "; verilator=" + str("--verilator" in sys.argv))
+print("16 mixed Queue configurations passed 512-cycle pre/post-edge replay; compiled=" + str("--compiled" in sys.argv) + "; verilator=" + str("--verilator" in sys.argv) + "; scalar_optimized=" + str("--scalar-optimized" in sys.argv))
 
 
 if "--twins" in sys.argv:

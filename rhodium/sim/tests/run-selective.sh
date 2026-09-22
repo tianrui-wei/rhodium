@@ -45,4 +45,5 @@ python3 rhodium/sim/tests/selective-host-runtime.py "$RDS_HOST_DIR"
 bash rhodium/sim/tests/run-runtime-regressions.sh "$selective_build"
 bash rhodium/sim/tests/run-core-regressions.sh
 bash rhodium/sim/tests/run-object-regressions.sh
+bash sims/native/tests/run.sh
 printf 'Generated artifacts: %s\n' "$selective_build"

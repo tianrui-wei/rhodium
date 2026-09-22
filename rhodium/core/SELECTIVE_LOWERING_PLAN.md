@@ -368,3 +368,21 @@ checks, including exact manifests for fixed, flushable, and elastic pipelines.
 Boundary, license-header, CI-routing, and whitespace checks pass. Native pipe
 execution, broader effect/error coverage, simulator regression migration, and
 performance measurements remain open.
+
+## Mixed native Queue and retained pipe execution
+
+The dependent simulator merges the public pipe/trace implementation. Eighteen
+Queue/pipe configurations pass 54 host checks, proving that direct Queue
+selection needs no portable Queue provider while pipes expand generically.
+Elastic, control-only, valid-only, and always-capture families cover stages
+1, 2, and 4, including optional flushes. All configurations pass 512-cycle
+pre/post-edge oracle replay in interpreter, generated C, and materialized
+CIRCT/Verilator with default native optimization. The oracle covers invalid
+payload observations, stalls, reset with pending traffic, consecutive flushes,
+and repeated evaluation without an edge.
+
+The shared runtime-model helper also passes the existing 16-configuration nested
+multiword replay. Boundary, license, CI-routing, Python/shell syntax, and
+whitespace checks pass. This is focused validation after the previous 777-check
+full entry-point baseline. Broader effects/errors, previous simulator regression
+migration, and performance measurements remain open.

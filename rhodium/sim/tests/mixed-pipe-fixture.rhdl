@@ -1,0 +1,51 @@
+#lang rhodium
+// Connects a selectable Queue to each retained pipe family under one clock and reset.
+// SPDX-License-Identifier: Apache-2.0
+
+import lib("flow/queue.rhdl") open
+import lib("flow/pipe.rhdl") open
+
+sync_circuit MixedPipe(kind :: String, stages :: PosInt, flushable :: Boolean):
+  input payload: Bits(8)
+  input valid: Bool
+  input ready: Bool
+  input flush: Bool
+  output input_ready: Bool
+  output output_valid: Bool
+  output output_payload: Bits(8)
+  output occupancy: Bits(2)
+  inst queue_instance(Queue(Bits(8), 3, ~pipe: #true, ~flow: #true))
+  queue_instance.ingress.bits <== payload
+  queue_instance.ingress.valid <== valid
+  input_ready <== queue_instance.ingress.ready
+  occupancy <== queue_instance.count
+  cond
+  | kind == "elastic":
+      inst stage(Pipe(Bits(8), stages))
+      queue_instance.egress |> stage.ingress
+      stage.egress.ready <== ready
+      output_valid <== stage.egress.valid
+      output_payload <== stage.egress.bits
+  | kind == "control":
+      inst stage(CtrlPipe(stages))
+      stage.ingress.valid <== queue_instance.egress.valid
+      queue_instance.egress.ready <== stage.ingress.ready
+      stage.egress.ready <== ready
+      output_valid <== stage.egress.valid
+      output_payload <== bits(0, 8)
+  | ~else:
+      def Component = if kind == "always" | ValidPipeAlwaysCapture(Bits(8), stages, ~flushable: flushable) | ValidPipe(Bits(8), stages, ~flushable: flushable)
+      inst stage(Component)
+      stage.ingress.valid <== queue_instance.egress.valid
+      stage.ingress.bits <== queue_instance.egress.bits
+      queue_instance.egress.ready <== Bool(#true)
+      if flushable
+      | stage.flush <== flush
+      | #void
+      output_valid <== stage.egress.valid
+      output_payload <== stage.egress.bits
+
+fun elaborate_mixed_pipe(kind, stages, flushable):
+  elaborate_with_top(MixedPipe(kind, stages, flushable), ~constructs: #true)
+
+export elaborate_mixed_pipe

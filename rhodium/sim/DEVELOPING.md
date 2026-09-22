@@ -186,3 +186,19 @@ matching Verilator bench and `--wide` oracle mode. Directed values exercise
 a vector of records. Its capture crosses all three aggregate boundaries while
 preserving the field dependency. `RDS_NESTED_MAP_DIR` emits this group, which uses
 the wide oracle and bench unchanged so every payload bit remains observable.
+
+## Mixed retained pipe execution
+
+`tests/mixed-pipe-fixture.rhdl` connects a depth-three bypass/replacement Queue
+to each pipe family at one, two, and four stages. Valid-only variants include
+flushable and nonflushable forms. `mixed-pipe-test.rhm` emits direct-Queue,
+expanded-Queue, and optimized models under `RDS_PIPE_DIR`; pipe bodies always
+use their portable provider and generic native lowering. The direct path has no
+Queue expansion provider, proving selection occurs before its body is needed.
+
+`mixed-pipe-runtime.py` owns the independent simultaneous-edge oracle, including
+invalid payload retention, always-capture behavior, pending reset, flushes,
+stalls, drain, and repeated evaluation. `runtime_model.py` shares only checked
+runtime ABI access with the Queue replay; oracle state and transitions stay
+independent of compiler/runtime implementation. The Verilator runner's `pipes/`
+group uses the same stimuli and observable outputs.

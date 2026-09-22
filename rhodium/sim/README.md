@@ -131,3 +131,13 @@ contracts, and Queue query ABI mismatches fail before an executable model is ret
 `NativeFunction` implementations cannot claim stateful or external effects.
 `NativeSlice(input, low, width)` preserves a Queue payload projection's exact
 input dependencies; it does not change full-payload capture on clock edges.
+
+Retained pipe families can expand through `PipeExpansions` into generic native
+operations while neighboring Queue occurrences select `QueueNative` directly.
+Eighteen mixed configurations cover elastic, control-only, valid-only, and
+always-capture pipes at one, two, and four stages, including flush options.
+They match an independent 512-cycle pre/post-edge oracle in interpreter,
+generated C, and materialized CIRCT/Verilator, including optimized models.
+This path preserves one shared schedule and does not require a pipe-specific
+native callback. Broader effect/error validation and performance measurement
+remain in progress.

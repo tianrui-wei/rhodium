@@ -8,7 +8,7 @@ selective_build="$(cd "$selective_build" && pwd)"
 circt_opt="${CIRCT_OPT:-$repo_dir/.tools/firtool-1.155.0/bin/circt-opt}"
 cd "$repo_dir"
 shopt -s nullglob
-mlir_files=("$selective_build"/queue-*.mlir "$selective_build"/aggregate-*.mlir)
+mlir_files=("$selective_build"/queue-*.mlir "$selective_build"/aggregate-*.mlir "$selective_build"/pipe-*.mlir)
 if (( ${#mlir_files[@]} == 0 )); then
   echo "No Queue fixtures found in $selective_build" >&2
   exit 1
@@ -25,6 +25,10 @@ for mlir in "${mlir_files[@]}"; do
     if [[ -f "$selective_build/wide-payload" ]]; then
       bench=wide-queue-verilator.cpp
     fi
+  fi
+  if [[ "$stem" == pipe-* ]]; then
+    top=MixedPipe
+    bench=mixed-pipe-verilator.cpp
   fi
   verilog="$selective_build/queue-$suffix.sv"
   "$circt_opt" --strip-debuginfo-with-pred='drop-suffix=.mlir' --canonicalize --cse --prettify-verilog \
@@ -55,8 +59,12 @@ fi
 if [[ -f "$selective_build/twins-mixed.rds" ]]; then
   replay_flags+=(--twins)
 fi
-python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" "${replay_flags[@]}"
-for child in nested mapped vector wide nested-map; do
+if [[ -f "$selective_build/direct-elastic-1-0.rds" ]]; then
+  python3 rhodium/sim/tests/mixed-pipe-runtime.py "$selective_build" --verilator
+else
+  python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" "${replay_flags[@]}"
+fi
+for child in nested mapped vector wide nested-map pipes; do
   if [[ -d "$selective_build/$child" ]]; then
     bash "$repo_dir/rhodium/sim/tests/run-selective-verilator.sh" "$selective_build/$child"
   fi

@@ -1,0 +1,34 @@
+#lang rhombus
+// Emits mixed retained pipe/Queue models and proves direct Queue selection skips its portable body.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../core/main.rhm" open
+  "../../backend/circt.rhm".emit_circt
+  "../../../flow/pipe.rhdl".PipeExpansions
+  "../../../flow/queue.rhdl".QueueExpansion
+  "../../../sims/native/queue.rhm".QueueNative
+  "mixed-pipe-fixture.rhdl".elaborate_mixed_pipe
+  lib("racket/base.rkt") as rkt
+
+def destination = rkt.getenv("RDS_PIPE_DIR")
+for (kind in ["elastic", "control", "valid", "always"]):
+  for (stages in [1, 2, 4]):
+    for (flushable in (if kind in ["valid", "always"] | [#false, #true] | [#false])):
+      def source = elaborate_mixed_pipe(kind, stages, flushable)
+      // Only pipe providers are available: selecting Queue must not need its body.
+      def direct = compile_simulation(source, ~expansions: PipeExpansions, ~lowerings: [QueueNative], ~optimize: #false)
+      def expanded = compile_simulation(source, ~expansions: PipeExpansions ++ [QueueExpansion], ~optimize: #false)
+      check:
+        direct.objects.length() ~is 1
+        expanded.objects.length() ~is 0
+        direct.registers.length() > 0 ~is #true
+      when destination
+      | def suffix = kind ++ "-" ++ to_string(stages) ++ "-" ++ (if flushable | "1" | "0")
+        write_simulation(direct, destination ++ "/direct-" ++ suffix ++ ".rds")
+        write_simulation(expanded, destination ++ "/expanded-" ++ suffix ++ ".rds")
+        def optimized = compile_simulation(source, ~expansions: PipeExpansions, ~lowerings: [QueueNative])
+        write_simulation(optimized, destination ++ "/optimized-" ++ suffix ++ ".rds")
+        def portable = materialize_constructs(source, PipeExpansions ++ [QueueExpansion]).elaboration
+        filesystem.write_bytes(destination ++ "/pipe-" ++ suffix ++ ".mlir", emit_circt(portable.design).utf8_bytes(), ~exists: #'truncate)

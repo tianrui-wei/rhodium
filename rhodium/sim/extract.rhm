@@ -5,6 +5,7 @@
 import:
   "../core/main.rhm" open
   "model.rhm" open
+  "composition.rhm".composition_wires
   "optimize.rhm" open
   "objects.rhm" open
   "native-contract.rhm".verify_native_implementation
@@ -64,6 +65,7 @@ fun compile_simulation(subject :: DesignElaboration || Module,
   def origins = MutableList[]
   def inventory = MutableList[]
   def native = MutableMap{}
+  def compositions = MutableMap{}
   def sources = MutableMap{}
   def resources = MutableMap{}
   def resolved = MutableMap{}
@@ -117,7 +119,18 @@ fun compile_simulation(subject :: DesignElaboration || Module,
           contract.ports.filter(~keep: fun (port): port.direction == "input"),
           contract.ports.filter(~keep: fun (port): port.direction == "output"))
         expand(boundary, path, parent, operation, #false, implementation.model)
-    | ~else: error(~who: #'compile_simulation, path ++ ": native composition extraction is not yet supported")
+    | body is_a ResolvedComposition:
+        def composition = body.composition
+        def boundary = NativeBoundary(
+          composition.name,
+          composition.contract.ports.filter(~keep: fun (port): port.direction == "input"),
+          composition.contract.ports.filter(~keep: fun (port): port.direction == "output"))
+        def occurrence = expand(boundary, path, parent, operation)
+        compositions[occurrence.id] := composition_wires(composition)
+        for (instance in composition.instances, implementation in body.implementations):
+          occurrence.children[instance.name] := expand_construct(implementation, path ++ "/" ++ instance.name, occurrence, instance)
+        occurrence
+    | ~else: error(~who: #'compile_simulation, path ++ ": unsupported resolved implementation")
 
   fun expand(module_def, path :: String, parent = #false, instance = #false,
              selection = #false, replacement = #false):
@@ -169,17 +182,53 @@ fun compile_simulation(subject :: DesignElaboration || Module,
 
   fun input_value(occurrence, name, low = 0, part_width = #false):
     def operation = occurrence.instance
-    def binding:
-      if operation.opcode == "construct.apply"
-      | block:
-          def inputs = operation.attribute("specialization").contract.ports.filter(~keep: fun (port): port.direction == "input")
-          def index = equal_index(inputs.map(fun (port): port.name), name)
-          operation.operands[index]
-      | block:
-          def inputs = operation.attribute("module").inputs
-          def index = equal_index(inputs.map(fun (port): port.name), name)
-          operation.places[index].driver
-    resolve(occurrence.parent, binding, low, part_width)
+    if operation is_a CompositionInstance
+    | composition_value(occurrence.parent, operation, name, low, part_width)
+    | block:
+        def binding:
+          if operation.opcode == "construct.apply"
+          | block:
+              def inputs = operation.attribute("specialization").contract.ports.filter(~keep: fun (port): port.direction == "input")
+              def index = equal_index(inputs.map(fun (port): port.name), name)
+              operation.operands[index]
+          | block:
+              def inputs = operation.attribute("module").inputs
+              def index = equal_index(inputs.map(fun (port): port.name), name)
+              operation.places[index].driver
+        resolve(occurrence.parent, binding, low, part_width)
+
+  fun composition_value(occurrence, sink, name, low = 0, part_width = #false):
+    def sink_name = if sink | sink.name | #false
+    def port:
+      if sink
+      | sink.body.contract.ports.find(fun (port): port.name == name)
+      | occurrence.module_def.outputs.find(fun (port): port.name == name)
+    def width = part_width || width_of(port.type)
+    def key = [occurrence.id, "connection", sink_name, name, low, width]
+    unless resolved.has_key(key)
+    | when key in active
+      | error(~who: #'compile_simulation, occurrence.path ++ ": combinational dependency cycle at composition port " ++ name)
+      active.add(key)
+      def pieces = MutableList[]
+      def mutable total = 0
+      for (wire in compositions[occurrence.id][[sink_name, name]]):
+        def start = math.max(low, wire.sink_low)
+        def end = math.min(low + width, wire.sink_low + wire.width)
+        when start < end
+        | def source_low = wire.source_low + start - wire.sink_low
+          def value:
+            if wire.source.instance
+            | block:
+                def child = occurrence.children[wire.source.instance.name]
+                def source_port = child.module_def.outputs.find(fun (port): port.name == wire.source.port)
+                output(child, source_port, source_low, end - start)
+            | input_value(occurrence, wire.source.port, source_low, end - start)
+          pieces.add(value)
+          total := total + end - start
+      unless total == width | error(~who: #'compile_simulation, "incomplete composition port range: " ++ name)
+      resolved[key] := if pieces.length() == 1 | pieces[0] | emit(20, width, pieces.snapshot())
+      active.remove(key)
+    resolved[key]
 
   fun native_input(occurrence, index, low = 0, width = #false):
     def spec = native[occurrence.id][1].inputs[index]
@@ -214,6 +263,7 @@ fun compile_simulation(subject :: DesignElaboration || Module,
   fun output(occurrence, port, low = 0, part_width = #false):
     def width = part_width || width_of(port.type)
     cond
+    | compositions.has_key(occurrence.id): composition_value(occurrence, #false, port.name, low, width)
     | !native.has_key(occurrence.id): resolve(occurrence, port.place.driver, low, width)
     | ~else:
         def binding = native[occurrence.id]
@@ -546,7 +596,7 @@ fun compile_simulation(subject :: DesignElaboration || Module,
   for (port in top.outputs):
     ports.add([1, output(root, port), port.name])
   for (occurrence in occurrences):
-    unless native.has_key(occurrence.id)
+    when occurrence.module_def is_a Module && !native.has_key(occurrence.id)
     | for (contract in contract_resolver(occurrence.module_def)):
         unless contract is_a SimulationContract
         | error("contract resolver must return SimulationContract records")

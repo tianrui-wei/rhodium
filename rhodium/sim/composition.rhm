@@ -1,0 +1,40 @@
+#lang rhombus
+// Maps verified scoped composition connections to packed ranges without flattening dependency leaves.
+// SPDX-License-Identifier: Apache-2.0
+
+import "../core/main.rhm" open
+
+export composition_wires
+
+class CompositionWire(source :: CompositionEndpoint, source_low :: Nat, sink_low :: Nat, width :: PosInt)
+
+fun packed_width(type): if clock_type(type) || reset_type(type) | 1 | type.packed_width()
+
+// The core resolver has already verified port names, paths, types, and drivers.
+fun composition_wires(composition :: HardwareComposition):
+  fun endpoint_range(endpoint):
+    def contract = if endpoint.instance | endpoint.instance.body.contract | composition.contract
+    def mutable type = contract.ports.find(fun (port): port.name == endpoint.port).type
+    def mutable low = 0
+    for (step in endpoint.path):
+      cond
+      | record_type(type):
+          def mutable offset = 0
+          def mutable selected = #false
+          for (field in type.fields.reverse()):
+            when field.name == step | selected := [field.type, offset]
+            offset := offset + packed_width(field.type)
+          low := low + selected[1]
+          type := selected[0]
+      | ~else:
+          low := low + step * packed_width(type.element_type)
+          type := type.element_type
+    [low, packed_width(type)]
+  def wires = MutableMap{}
+  for (connection in composition.connections):
+    def source = endpoint_range(connection.source)
+    def sink = endpoint_range(connection.sink)
+    def key = [if connection.sink.instance | connection.sink.instance.name | #false, connection.sink.port]
+    wires[key] := wires.get(key, []) ++ [CompositionWire(connection.source, source[0], sink[0], sink[1])]
+  for Map ((key, ranges) in wires):
+    values(key, ranges.sort(fun (a, b): a.sink_low < b.sink_low))

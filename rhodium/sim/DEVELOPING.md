@@ -106,8 +106,15 @@ port names so portable implementation port order cannot change the ABI.
 `sims/native`. `native-contract.rhm` checks packed input/output ranges, complete
 nonoverlapping output coverage, leaf-sensitive dependency containment, declared
 effects, and the supported Queue clock/reset/query ABI. Native semantics still
-require owner-provided implementations and differential validation. Nested
-composition extraction remains a separate integration gate.
+require owner-provided implementations and differential validation.
+`composition.rhm` maps verified scoped connections to packed port ranges.
+Composition occurrences allocate their children before resolving connections;
+input and output projections follow those connections lazily, preserving
+field-level dependencies across nested boundaries. Native leaves and portable
+core children retain separate occurrence state under the shared schedule.
+Run `nested-queue-test.rhm` and its interpreter/generated-C replay when changing
+this path; its two enclosing compositions wire individual leaves in reverse
+declaration order to exercise packed assembly independently of source order.
 
 The focused host tests prove skipped expansion and occurrence-local choices.
 Runtime replay checks every public output before/after edges against a separate

@@ -101,8 +101,11 @@ printed by that runner to `bash rhodium/sim/tests/run-selective-verilator.sh DIR
 to add CIRCT/Verilator comparison. The current matrix covers 8-bit Queues at
 depths 1, 2, 3, and 8 with every pipe/flow option, plus repeated occurrences with
 different implementation choices. Record-payload fixtures exercise field-level
-feedback and the default native optimizer. Nested composition extraction and
-higher-order payload regions remain pending. [Implementation rules](DEVELOPING.md) describe
+feedback and the default native optimizer. Nested compositions support selected
+native children and portable core children under the same schedule. The nested
+Queue matrix checks two enclosing levels, leaf-wise wiring, skipped expansion,
+and 512-cycle interpreter/generated-C replay. Higher-order payload regions
+and broader nested mixed-instance coverage remain pending. [Implementation rules](DEVELOPING.md) describe
 publication, ownership and focused validation.
 
 Native implementations must completely cover each output port with disjoint

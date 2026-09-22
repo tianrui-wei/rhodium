@@ -444,7 +444,7 @@ produce the same public IR and CIRCT representation.
 
 ## Native consumer integration
 
-`sim/extract.rhm`, `sim/objects.rhm`, and `sim/native-contract.rhm` import
+`sim/extract.rhm`, `sim/composition.rhm`, `sim/objects.rhm`, and `sim/native-contract.rhm` import
 `core/main.rhm` for
 public hardware and construct contracts. The remaining simulator modules
 import sibling simulator modules and Racket/Rhombus libraries. The standalone

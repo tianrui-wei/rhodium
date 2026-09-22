@@ -1,0 +1,63 @@
+#lang rhombus
+// Exercises recursive composition extraction with selected and expanded Queue children.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../native-contract.rhm".packed_native_leaves
+  "../../core/main.rhm" open
+  "../../../sims/native/queue.rhm".QueueNative
+  "../../../flow/queue.rhdl" open
+  "selective-queue-fixture.rhdl".elaborate_mixed
+  lib("racket/base.rkt") as rkt
+
+def leaf_identity = ConstructIdentity("test.nested.queue", 1)
+def destination = rkt.getenv("RDS_NESTED_DIR")
+fun wrap(name, body):
+  def child = CompositionInstance("child", body)
+  def connections = MutableList[]
+  for (port in body.contract.ports.reverse()):
+    for (leaf in packed_native_leaves(port.type).reverse()):
+      def boundary = CompositionEndpoint(#false, port.name, leaf[0])
+      def internal = CompositionEndpoint(child, port.name, leaf[0])
+      connections.add(if port.direction == "input"
+                      | CompositionConnection(boundary, internal)
+                      | CompositionConnection(internal, boundary))
+  HardwareComposition(
+    name, body.contract, [child], connections.snapshot(),
+    body.contract.effects.map(fun (effect): CompositionEffect(child, effect.name, effect.name)))
+
+for (depth in [1, 2, 3, 8]):
+  for (pipe in [#false, #true]):
+    for (flow in [#false, #true]):
+      def source = elaborate_mixed(depth, pipe, flow)
+      def mutable parents = 0
+      def mutable leaves = 0
+      def providers = [
+        ExpansionProvider(
+          QueueConstruct,
+          fun (spec):
+            parents := parents + 1
+            wrap("Outer", wrap("Inner", ConstructSpecialization(leaf_identity, spec.parameters, spec.contract)))),
+        ExpansionProvider(
+          leaf_identity,
+          fun (spec):
+            leaves := leaves + 1
+            QueueExpansion.expand(ConstructSpecialization(QueueConstruct, spec.parameters, spec.contract)))
+      ]
+      def lowering = TargetLowering(leaf_identity, "native", fun (o): #true, QueueNative.lower)
+      def direct = compile_simulation(source, ~expansions: providers, ~lowerings: [lowering], ~optimize: #false)
+      check:
+        parents ~is 1
+        leaves ~is 0
+        direct.objects.length() ~is 1
+        direct.registers.length() ~is 1
+      def expanded = compile_simulation(source, ~expansions: providers, ~optimize: #false)
+      check:
+        parents ~is 2
+        leaves ~is 1
+        expanded.objects.length() ~is 0
+      when destination
+      | def suffix = to_string(depth) ++ "-" ++ (if pipe | "1" | "0") ++ "-" ++ (if flow | "1" | "0")
+        write_simulation(direct, destination ++ "/direct-" ++ suffix ++ ".rds")
+        write_simulation(expanded, destination ++ "/expanded-" ++ suffix ++ ".rds")

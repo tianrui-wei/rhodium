@@ -159,3 +159,19 @@ Remaining gates include nested composition extraction, typed payload regions,
 additional effect/error and wide/vector coverage, performance measurements, and
 migration of the previous simulator suite. The new verifier checks boundary
 conformance; target implementations still need semantic differential evidence.
+
+## Nested native composition progress
+
+The native extractor now resolves scoped composition connections by packed
+range and recursively allocates native or portable core children. Two enclosing
+composition levels around Queue pass 112 selection checks across 16
+configurations. Individual port leaves are connected in reverse declaration
+order. The selected Queue body is skipped; fallback expands it once. Both paths
+pass 512-cycle pre/post-edge interpreter and generated-C replay against the
+independent mixed Queue/arithmetic/register oracle.
+
+This establishes nested boundary execution, not all of gate 6. Remaining nested
+coverage includes multiple differently selected siblings, aggregate cross-field
+feedback through nested boundaries, and materialized CIRCT/Verilator replay.
+Typed payload regions, broader effects and vector coverage, performance, and
+migration of the previous simulator suite remain outstanding.

@@ -1,0 +1,58 @@
+#lang rhodium
+// Combines a retained guarded assertion and register with directly selectable Queue state.
+// SPDX-License-Identifier: Apache-2.0
+
+import lib("flow/queue.rhdl") open
+
+def CheckedConstruct = ConstructIdentity("test.checked-state", 1)
+sync_circuit CheckedState():
+  input permit: Bool
+  input check_enable: Bool
+  output phase: Bits(8)
+  def spec = construct_signature(
+    CheckedConstruct, {}, fun (output): [],
+    ~clocks: ["clock"], ~resets: [ConstructReset("reset", "clock", "synchronous", #true)],
+    ~effects: [ConstructEffect("state", "state", "clock"), ConstructEffect("permit_transfer", "assertion", "clock")])
+  implementation(~construct: spec):
+    reg count(~init: bits(0, 8))
+    count <== count + bits(1, 8)
+    phase <== count
+    when check_enable:
+      assert(permit, "permit_transfer")
+
+def CheckedExpansion = ExpansionProvider(
+  CheckedConstruct,
+  fun (spec):
+    def expanded = elaborate_with_top(CheckedState())
+    bind_core_implementation(
+      expanded.top, spec.contract,
+      fun (op, path): if op.opcode == "verif.assert" | "permit_transfer" | "state"))
+
+sync_circuit SelectiveEffects(depth :: PosInt, pipe :: Boolean, flow :: Boolean):
+  input payload: Bits(8)
+  input valid: Bool
+  input ready: Bool
+  input permit: Bool
+  input check_enable: Bool
+  output input_ready: Bool
+  output output_valid: Bool
+  output output_payload: Bits(8)
+  output occupancy: Bits(index_width(depth + 1))
+  output phase: Bits(8)
+  inst checked(CheckedState())
+  checked.permit <== permit
+  checked.check_enable <== check_enable
+  phase <== checked.phase
+  inst queue_instance(Queue(Bits(8), depth, ~pipe: pipe, ~flow: flow))
+  queue_instance.ingress.bits <== payload
+  queue_instance.ingress.valid <== valid
+  queue_instance.egress.ready <== ready
+  input_ready <== queue_instance.ingress.ready
+  output_valid <== queue_instance.egress.valid
+  output_payload <== queue_instance.egress.bits
+  occupancy <== queue_instance.count
+
+fun elaborate_effects(depth, pipe, flow):
+  elaborate_with_top(SelectiveEffects(depth, pipe, flow), ~constructs: #true)
+
+export elaborate_effects CheckedExpansion

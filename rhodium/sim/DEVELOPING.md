@@ -202,3 +202,17 @@ stalls, drain, and repeated evaluation. `runtime_model.py` shares only checked
 runtime ABI access with the Queue replay; oracle state and transitions stay
 independent of compiler/runtime implementation. The Verilator runner's `pipes/`
 group uses the same stimuli and observable outputs.
+
+## Assertion failure and retry
+
+`tests/selective-effects-fixture.rhdl` declares clocked state and a named guarded
+assertion through the public construct protocol, then expands that construct
+beside either a native or portable Queue. The host matrix checks assertion
+preservation exactly once after extraction and optimization. The replay runs
+eight Queue configurations in direct, expanded, and optimized modes, each in
+interpreter and generated C. It rejects repeated edges with distinct proposed
+inputs, restores accepted inputs, and compares with a clean execution that never
+attempted those edges. Diagnostic cycle numbers, register phase, Queue outputs,
+reset/guard suppression, and future drain behavior expose premature publication.
+The shared runner emits models under `RDS_EFFECTS_DIR` and runs this replay.
+This gate does not establish arbitrary external callback semantics.

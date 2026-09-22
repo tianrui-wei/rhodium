@@ -141,3 +141,11 @@ generated C, and materialized CIRCT/Verilator, including optimized models.
 This path preserves one shared schedule and does not require a pipe-specific
 native callback. Broader effect/error validation and performance measurement
 remain in progress.
+
+Guarded assertions inside retained portable constructs survive extraction and
+optimization. The selective-effects regression checks exactly one named assertion
+and runs 48 failure/retry traces across native and expanded Queue state in
+interpreted and compiled modes, including optimization. Rejected edges preserve
+register/Queue state and diagnostic cycle numbers; retry matches execution that
+never attempted the rejected edges. Reset and disabled guards suppress checks.
+External callback effects require separate validation.

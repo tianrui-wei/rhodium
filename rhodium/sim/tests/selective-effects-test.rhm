@@ -1,0 +1,29 @@
+#lang rhombus
+// Checks assertion preservation through retained expansion and emits failure/retry models.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../../sims/native/queue.rhm".QueueNative
+  "../../../flow/queue.rhdl".QueueExpansion
+  "selective-effects-fixture.rhdl" open
+  lib("racket/base.rkt") as rkt
+
+def destination = rkt.getenv("RDS_EFFECTS_DIR")
+for (depth in [1, 3]):
+  for (pipe in [#false, #true]):
+    for (flow in [#false, #true]):
+      def source = elaborate_effects(depth, pipe, flow)
+      for (kind in ["direct", "expanded", "optimized"]):
+        def model = compile_simulation(
+          source,
+          ~expansions: if kind == "expanded" | [CheckedExpansion, QueueExpansion] | [CheckedExpansion],
+          ~lowerings: if kind == "expanded" | [] | [QueueNative],
+          ~optimize: kind == "optimized")
+        def named_checks = model.checks.filter(~keep: fun (entry): entry.last.contains("permit_transfer"))
+        check:
+          named_checks.length() ~is 1
+          model.objects.length() ~is (if kind == "expanded" | 0 | 1)
+        when destination
+        | def suffix = to_string(depth) ++ "-" ++ (if pipe | "1" | "0") ++ "-" ++ (if flow | "1" | "0")
+          write_simulation(model, destination ++ "/" ++ kind ++ "-" ++ suffix ++ ".rds")

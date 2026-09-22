@@ -386,3 +386,16 @@ multiword replay. Boundary, license, CI-routing, Python/shell syntax, and
 whitespace checks pass. This is focused validation after the previous 777-check
 full entry-point baseline. Broader effects/errors, previous simulator regression
 migration, and performance measurements remain open.
+
+## Retained assertions and failed-edge atomicity
+
+The dependent simulator adds a retained construct declaring guarded assertion
+and state effects beside Queue. Forty-eight host checks verify that the named
+assertion survives exactly once in direct, expanded, and optimized models.
+Forty-eight interpreter/generated-C traces each pass 256 accepted edges with
+repeated rejected attempts, changed proposed inputs, and retry against clean
+execution. Checks cover unchanged register/Queue state, stable diagnostic cycle
+numbers, future drain, and reset/guard suppression. The host entry point now
+includes this effects group. Boundary, license, CI-routing, Python/shell syntax,
+and whitespace checks pass. External callback effects, broader runtime regression
+migration, and performance measurements remain open.

@@ -37,3 +37,12 @@ eligibility, SIMD register aliases, and ELF load-sample attribution. Their
 package-local regressions preserve conservative rejection of overlapping slots
 and malformed records. Parser validation does not claim live PMU collection or
 dynamic performance measurements on this host.
+
+`specialize-empty.cpp` is an external generated-C specialization utility that
+consumes exact SSA/state/store provenance. Its separate regression entry point
+is `bash sims/native/tests/empty-specialization-test.sh RUNTIME_DIRECTORY`,
+where the directory contains `librhodium_sim.so`. The runner builds its compiler
+dependencies and checks empty transport, invalid pipes, current-state aliases,
+narrow/wide state, ancestor regions, grant ownership, and local guards against
+transactional reference execution. This optimization does not replace retained
+construct selection before portable expansion.

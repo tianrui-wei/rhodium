@@ -329,6 +329,15 @@ generated commands, and optional static machine-code reports. Its migrated
 sparse/default decoder selection, source provenance, and real compiler-output
 disassembly. The core regression runner includes this inspection gate.
 
+`tests/differential.sh ARTIFACT_DIRECTORY` restores the optional ordinary-core
+CIRCT/Verilator comparison using emitted `hierarchy` or `pipeline` fixtures.
+Select the latter with `RDS_BENCH_MODEL=pipeline`; `RDS_BENCH_CYCLES` controls
+replay length. `compare.py` checks full traces and matching digests across
+reference, generic, optimized, parallel, generated-C, and Verilator execution.
+Its timing report is separate from correctness evidence and does not measure
+retained direct-versus-expanded constructs. Use an otherwise idle host for
+performance interpretation.
+
 ## Native object and replication regression suite
 
 `make sim-object-regression-test` runs `tests/run-object-regressions.sh` with a

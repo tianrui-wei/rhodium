@@ -184,3 +184,68 @@ if "--twins" in sys.argv:
     for model in models:
         lib.rds_free(model.ptr)
     print("Repeated Queue definitions passed independent direct/mixed/expanded state replay")
+
+if "--aggregate" in sys.argv:
+    names = ["input_ready", "output_valid", "left", "right", "occupancy"]
+    for depth in [1, 2, 3, 8]:
+        for pipe in [False, True]:
+            for flow in [False, True]:
+                suffix = f"{depth}-{int(pipe)}-{int(flow)}"
+                models = [Model("aggregate-" + kind + "-" + suffix + ".rds", compiled, names)
+                          for kind in (["direct", "expanded", "optimized"] if "--optimized" in sys.argv else ["direct", "expanded"])
+                          for compiled in ([False, True] if "--compiled" in sys.argv else [False])]
+                rng = random.Random(67127 + depth * 4 + pipe * 2 + flow)
+                stimuli = []
+                for cycle in range(256):
+                    row = dict(payload=rng.randrange(256), valid=rng.randrange(3) != 0,
+                               ready=rng.randrange(2) != 0, reset=cycle in [0, 1, 37, 113])
+                    if cycle == 0 or 2 <= cycle < 2 + depth + 2 or 25 <= cycle <= 37:
+                        row.update(valid=True, ready=False)
+                    if 2 + depth + 2 <= cycle < 2 + 2 * depth + 5:
+                        row.update(valid=True, ready=True)
+                    if cycle >= 240:
+                        row.update(valid=False, ready=True)
+                    if cycle == 255:
+                        row.update(valid=True, ready=True)
+                    stimuli.append(row)
+                verilog_outputs = []
+                if "--verilator" in sys.argv:
+                    vectors = "".join(" ".join(str(int(row[name])) for name in ["payload", "valid", "ready", "reset"]) + "\n" for row in stimuli)
+                    replay = subprocess.run([str(build / ("verilator-aggregate-" + suffix) / "VAggregateQueue")],
+                                            input=vectors, text=True, capture_output=True, check=True)
+                    verilog_outputs = [dict(zip(names, map(int, line.split()))) for line in replay.stdout.splitlines()]
+                    assert len(verilog_outputs) == 2 * len(stimuli)
+                storage, read, write, count = [(0, 0)] * depth, 0, 0, 0
+                for cycle, row in enumerate(stimuli):
+                    for model in models:
+                        for name, value in row.items():
+                            model.set(name, value)
+                    for edge in ["before", "after"]:
+                        left = row["payload"] if flow and count == 0 else storage[read][0]
+                        right = ((left + 1) & 255) if flow and count == 0 else storage[read][1]
+                        oracle = dict(input_ready=int(count < depth or (pipe and row["ready"])),
+                                      output_valid=int(count > 0 or (flow and row["valid"])),
+                                      left=left, right=right, occupancy=count)
+                        for model in models:
+                            actual = model.outputs()
+                            assert actual == oracle, ("aggregate", suffix, cycle, edge, row, actual, oracle)
+                        if verilog_outputs:
+                            actual = verilog_outputs[2 * cycle + (edge == "after")]
+                            assert actual == oracle, ("aggregate-verilator", suffix, cycle, edge, row, actual, oracle)
+                        if edge == "after":
+                            break
+                        enqueue = row["valid"] and oracle["input_ready"] and not (flow and count == 0 and row["ready"])
+                        dequeue = count > 0 and row["ready"]
+                        if enqueue:
+                            storage[write] = (row["payload"], (left + 1) & 255)
+                        if row["reset"]:
+                            read, write, count = 0, 0, 0
+                        else:
+                            read = (read + int(dequeue)) % depth
+                            write = (write + int(enqueue)) % depth
+                            count += int(enqueue) - int(dequeue)
+                        for model in models:
+                            model.check(lib.rds_advance(model.ptr))
+                for model in models:
+                    lib.rds_free(model.ptr)
+    print("16 aggregate Queue configurations passed 256-cycle feedback replay; optimized=" + str("--optimized" in sys.argv))

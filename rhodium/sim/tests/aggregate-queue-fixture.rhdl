@@ -1,0 +1,34 @@
+#lang rhodium
+// Exercises legal cross-field feedback through an aggregate Queue bypass path.
+// SPDX-License-Identifier: Apache-2.0
+
+import lib("flow/queue.rhdl") open
+
+bundle Pair():
+  left: Bits(8)
+  right: Bits(8)
+
+sync_circuit AggregateQueue(depth :: PosInt, pipe :: Boolean, flow :: Boolean):
+  input payload: Bits(8)
+  input valid: Bool
+  input ready: Bool
+  output input_ready: Bool
+  output output_valid: Bool
+  output left: Bits(8)
+  output right: Bits(8)
+  output occupancy: Bits(index_width(depth + 1))
+  inst queue_instance(Queue(Pair(), depth, ~pipe: pipe, ~flow: flow))
+  queue_instance.ingress.valid <== valid
+  queue_instance.ingress.bits.left <== payload
+  queue_instance.ingress.bits.right <== queue_instance.egress.bits.left + bits(1, 8)
+  queue_instance.egress.ready <== ready
+  input_ready <== queue_instance.ingress.ready
+  output_valid <== queue_instance.egress.valid
+  left <== queue_instance.egress.bits.left
+  right <== queue_instance.egress.bits.right
+  occupancy <== queue_instance.count
+
+fun elaborate_aggregate(depth, pipe, flow):
+  elaborate_with_top(AggregateQueue(depth, pipe, flow), ~constructs: #true)
+
+export elaborate_aggregate

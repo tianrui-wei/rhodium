@@ -20,5 +20,6 @@ export:
   NativeModel
   NativeFunction
   NativeOutput
+  NativeSlice
   NativeImplementation
   replicate_simulation

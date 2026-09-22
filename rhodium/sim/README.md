@@ -100,6 +100,15 @@ generated-C replay against an independent oracle. Pass the generated directory
 printed by that runner to `bash rhodium/sim/tests/run-selective-verilator.sh DIR`
 to add CIRCT/Verilator comparison. The current matrix covers 8-bit Queues at
 depths 1, 2, 3, and 8 with every pipe/flow option, plus repeated occurrences with
-different implementation choices. Nested composition extraction, aggregate
-native dependency validation, and higher-order payload regions remain pending. [Implementation rules](DEVELOPING.md) describe
+different implementation choices. Record-payload fixtures exercise field-level
+feedback and the default native optimizer. Nested composition extraction and
+higher-order payload regions remain pending. [Implementation rules](DEVELOPING.md) describe
 publication, ownership and focused validation.
+
+Native implementations must completely cover each output port with disjoint
+packed ranges and declare only dependencies permitted by the construct's leaf
+contract. Invalid ranges, missing/duplicate effects, unsupported clock/reset
+contracts, and Queue query ABI mismatches fail before an executable model is returned. Pure
+`NativeFunction` implementations cannot claim stateful or external effects.
+`NativeSlice(input, low, width)` preserves a Queue payload projection's exact
+input dependencies; it does not change full-payload capture on clock edges.

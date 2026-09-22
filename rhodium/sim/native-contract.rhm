@@ -1,0 +1,117 @@
+#lang rhombus
+// Verifies native port coverage, packed dependency ranges, and supported effect/control contracts.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../core/main.rhm" open
+  "objects.rhm" open
+
+export verify_native_implementation packed_native_leaves
+
+fun packed_width(type): if clock_type(type) || reset_type(type) | 1 | type.packed_width()
+
+// Each leaf is [aggregate path, low bit, width] in core's packed ABI.
+fun packed_native_leaves(type, path = [], low = 0):
+  cond
+  | record_type(type):
+      def result = MutableList[]
+      def mutable offset = low
+      for (field in type.fields.reverse()):
+        result.append(packed_native_leaves(field.type, path ++ [field.name], offset))
+        offset := offset + packed_width(field.type)
+      result.snapshot()
+  | vector_type(type):
+      def result = MutableList[]
+      for (index in 0..type.length):
+        result.append(packed_native_leaves(type.element_type, path ++ [index], low + index * packed_width(type.element_type)))
+      result.snapshot()
+  | ~else: [[path, low, packed_width(type)]]
+
+fun verify_native_implementation(implementation :: NativeImplementation, contract :: ConstructContract, path :: String):
+  fun fail(message): error(~who: #'compile_simulation, path ++ ": " ++ message)
+  verify_construct_contract(contract)
+  unless same_construct_contract(contract, implementation.contract) | fail("native lowering changed boundary contract")
+  unless implementation.effects.length() == contract.effects.length()
+      && (for all (effect in contract.effects): implementation.effects.filter(~keep: fun (name): name == effect.name).length() == 1)
+  | fail("native lowering must preserve every declared effect exactly once")
+  def model = implementation.model
+  when model is_a NativeFunction && contract.effects.length() != 0
+  | fail("pure native function cannot implement state or effects")
+  unless contract.clocks.length() <= 1 && (for all (reset in contract.resets): reset.timing == "synchronous" && reset.active_high)
+  | fail("unsupported native clock/reset contract")
+  fun port_named(name, direction):
+    def port = contract.ports.find(fun (port): port.name == name && port.direction == direction)
+    unless port | fail("native " ++ direction ++ " port not found: " ++ name)
+    port
+  for (input in model.inputs):
+    when input
+    | unless input is_a List && input.length() == 3 && input[0] is_a String && input[1] is_a Nat && input[2] is_a PosInt
+      | fail("invalid native input range")
+      def port = port_named(input[0], "input")
+      unless input[1] + input[2] <= packed_width(port.type) | fail("native input range exceeds port: " ++ port.name)
+  when model is_a NativeModel && model.kind == 1
+  | unless contract.clocks.length() == 1 && contract.resets.length() == 1
+        && contract.effects.filter(~keep: fun (effect): effect.kind == "state").length() == 1
+        && (for all (effect in contract.effects): effect.kind in ["state", "assertion"] && effect.clock == contract.clocks[0])
+    | fail("native queue requires one clock, synchronous reset, and clocked state/assertion effects")
+    unless model.inputs.length() == 4 && model.inputs[0] == [contract.resets[0].port, 0, 1]
+    | fail("native queue reset input does not match contract")
+    unless model.width > 0 && model.flags < 8 | fail("unsupported native queue width or flags")
+    for (input in model.inputs, expected in [1, 1, model.width, 1]):
+      unless input && input[2] == expected | fail("native queue input width differs from execution ABI")
+  fun overlaps(a, aw, b, bw): a < b + bw && b < a + aw
+  def covered = MutableMap{}
+  for (output in model.outputs):
+    unless output is_a NativeOutput | fail("invalid native output binding")
+    def port = port_named(output.port, "output")
+    unless output.low + output.width <= packed_width(port.type) | fail("native output range exceeds port: " ++ port.name)
+    def prior = covered.get(port.name, [])
+    when prior.find(fun (other): overlaps(output.low, output.width, other.low, other.width))
+    | fail("overlapping native output ranges: " ++ port.name)
+    covered[port.name] := prior ++ [output]
+    def query_width = output.query_width || output.width
+    unless query_width is_a PosInt && output.query_low + output.width <= query_width
+    | fail("native output exceeds query width")
+    when model is_a NativeFunction && output.query != 0 | fail("pure native function exposes only query zero")
+    when model is_a NativeModel && model.kind == 1
+    | unless output.query < 4
+      | fail("unsupported native queue query")
+      def expected_width = if output.query == 0 | count_index_width(model.depth + 1) | (if output.query == 3 | model.width | 1)
+      unless query_width == expected_width | fail("native queue query width differs from execution ABI")
+      def expected_dependencies:
+        cond
+        | output.query == 1 && (model.flags bits.and 2) != 0: [3]
+        | output.query == 2 && (model.flags bits.and 4) != 0: [1]
+        | output.query == 3 && (model.flags bits.and 4) != 0: [2]
+        | ~else: []
+      unless output.dependencies.map(fun (dependency): if dependency is_a NativeSlice | dependency.input | dependency) == expected_dependencies
+      | fail("native queue query dependencies differ from execution ABI")
+    def dependencies = MutableList[]
+    for (dependency in output.dependencies):
+      def index = if dependency is_a NativeSlice | dependency.input | dependency
+      unless index is_a Nat && index < model.inputs.length() && model.inputs[index]
+      | fail("invalid native dependency input slot")
+      def input = model.inputs[index]
+      def low = if dependency is_a NativeSlice | dependency.low | 0
+      def width = if dependency is_a NativeSlice | dependency.width | input[2]
+      unless low + width <= input[2] | fail("native dependency slice exceeds input range")
+      when dependency is_a NativeSlice
+      | unless model is_a NativeModel && model.kind == 1 && output.query == 3 && index == 2
+            && low == output.query_low && width == output.width && query_width == input[2]
+        | fail("native dependency slicing requires a matching queue payload projection")
+      def input_port = port_named(input[0], "input")
+      for (leaf in packed_native_leaves(input_port.type)):
+        when overlaps(input[1] + low, width, leaf[1], leaf[2])
+        | dependencies.add([input_port.name, leaf[0]])
+    for (leaf in packed_native_leaves(port.type)):
+      when overlaps(output.low, output.width, leaf[1], leaf[2])
+      | def declared = contract.dependencies.find(fun (entry): entry.output.port == port.name && entry.output.path == leaf[0])
+        for (dependency in dependencies):
+          unless declared.inputs.find(fun (input): input.port == dependency[0] && input.path == dependency[1])
+          | fail("native output has an undeclared combinational dependency: " ++ port.name)
+  for (port in contract.ports):
+    when port.direction == "output"
+    | def mutable width = 0
+      for (output in covered.get(port.name, [])): width := width + output.width
+      unless width == packed_width(port.type) | fail("native output does not cover port: " ++ port.name)
+  #void

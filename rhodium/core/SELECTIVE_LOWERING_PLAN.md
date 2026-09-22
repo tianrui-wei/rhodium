@@ -132,8 +132,30 @@ expansion caching for repeated Queue definitions. Independent paired runtime
 replay passes 256 cycles for direct, mixed, and expanded choices in interpreter
 and generated-C modes.
 
-This evidence does not finish gates 4–6. Native contract/range/dependency
-validation, aggregate feedback, nested composition extraction, typed payload
+This scalar evidence does not finish gates 4–6. The contract and record-payload
+follow-up is described below; nested composition extraction, typed payload
 regions, broader effect/error cases, performance measurements, and migration of
 the previous simulator regression suite remain. Simulator changes stay in this
 dependent branch; the IR PR remains free of compiler/runtime sources.
+
+## Native contract and aggregate validation
+
+`native-contract.rhm` now verifies packed input/output ranges, disjoint complete
+output coverage, dependency containment at public leaves, exact effect names,
+and Queue clock/reset/query ABI requirements. Pure native functions reject
+stateful or external effects. Queue payload projections use `NativeSlice` to
+avoid introducing whole-payload dependencies; state capture still consumes the
+complete payload. Descriptor ordering does not change packed output layout.
+
+The native CI entry point passes 158 host checks, including invalid native
+bindings, clocks/resets, and effects. Sixteen record-payload Queue configurations
+include legal cross-field feedback and pass interpreter, generated-C, and
+CIRCT/Verilator replay against an independent 256-cycle oracle. Default-optimized
+models also pass the same replay. Scalar 512-cycle and paired-instance regression
+coverage continues to pass. Native CI installs the standalone optimizer's JSON
+and Boost headers. Generated artifacts remain outside the checkout.
+
+Remaining gates include nested composition extraction, typed payload regions,
+additional effect/error and wide/vector coverage, performance measurements, and
+migration of the previous simulator suite. The new verifier checks boundary
+conformance; target implementations still need semantic differential evidence.

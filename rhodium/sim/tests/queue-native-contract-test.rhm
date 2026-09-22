@@ -1,0 +1,42 @@
+#lang rhombus
+// Rejects Queue ABI, effect, clock/reset, and dependency mismatches at the native contract boundary.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../../core/main.rhm" open
+  "../objects.rhm" open
+  "../native-contract.rhm".verify_native_implementation
+  "../../../sims/native/queue.rhm".QueueNative
+  "../../../flow/tests/retained-queue-fixture.rhdl".elaborate_queue
+
+def design = elaborate_queue(Bits(8), 3, #true, #true, #true)
+def operation = design.design.walk().find(fun (op): op.opcode == "construct.apply")
+def specialization = operation.attribute("specialization")
+def original = QueueNative.lower(specialization, ConstructOccurrence("test", specialization))
+def contract = original.contract
+def model = original.model
+fun verify(model, effects = original.effects):
+  verify_native_implementation(NativeImplementation(contract, model, effects), contract, "test")
+fun changed_inputs(inputs): NativeModel(model.kind, model.width, model.depth, model.flags, inputs, model.outputs)
+fun changed_outputs(outputs): NativeModel(model.kind, model.width, model.depth, model.flags, model.inputs, outputs)
+check:
+  verify(model) ~is #void
+  verify(model, []) ~throws "every declared effect"
+  verify(model, original.effects ++ [original.effects[0]]) ~throws "every declared effect"
+  verify(NativeFunction(1, model.inputs, model.outputs)) ~throws "pure native function cannot"
+  verify(changed_inputs([["ingress_in", 8, 1]] ++ model.inputs.drop(1))) ~throws "reset input does not match"
+  verify(changed_inputs(model.inputs.take(2) ++ [["ingress_in", 0, 7], model.inputs[3]])) ~throws "input width differs"
+  verify(changed_inputs([model.inputs[0], ["egress_in", 0, 1], model.inputs[2], model.inputs[3]])) ~throws "undeclared combinational dependency"
+  verify(changed_outputs(model.outputs.map(fun (output): if output.query == 1 | NativeOutput(output.port, output.low, output.width, 1, [1]) | output))) ~throws "query dependencies differ"
+  verify(changed_outputs(model.outputs.map(fun (output): if output.query == 3 | NativeOutput(output.port, output.low, output.width, 3, [], 0, 8) | output))) ~throws "query dependencies differ"
+
+def clock = contract.ports.find(fun (port): port.name == contract.clocks[0])
+def two_clocks = ConstructContract(contract.ports ++ [ConstructPort("second_clock", "input", clock.type)], contract.dependencies, contract.clocks ++ ["second_clock"], contract.resets, contract.effects)
+def asynchronous = ConstructContract(
+  contract.ports, contract.dependencies, contract.clocks,
+  contract.resets.map(fun (reset): ConstructReset(reset.port, reset.clock, "asynchronous", reset.active_high)), contract.effects)
+def effectful = ConstructContract(contract.ports, contract.dependencies, contract.clocks, contract.resets, contract.effects ++ [ConstructEffect("external", "dpi", contract.clocks[0])])
+check:
+  verify_native_implementation(NativeImplementation(two_clocks, model, original.effects), two_clocks, "test") ~throws "unsupported native clock/reset"
+  verify_native_implementation(NativeImplementation(asynchronous, model, original.effects), asynchronous, "test") ~throws "unsupported native clock/reset"
+  verify_native_implementation(NativeImplementation(effectful, model, original.effects ++ ["external"]), effectful, "test") ~throws "clocked state/assertion"

@@ -6,6 +6,7 @@ export:
   NativeModel
   NativeFunction
   NativeOutput
+  NativeSlice
   NativeImplementation
 
 import "../core/main.rhm" open
@@ -23,3 +24,6 @@ class NativeFunction(opcode :: Nat, inputs :: List, outputs :: List, immediates 
 class NativeImplementation(contract :: ConstructContract,
                            model :: NativeModel || NativeFunction,
                            effects :: List.of(String))
+
+// A queue payload query may demand a bit slice while state capture still reads the full input.
+class NativeSlice(input :: Nat, low :: Nat, width :: PosInt)

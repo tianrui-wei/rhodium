@@ -1,0 +1,30 @@
+#lang rhombus
+// Checks aggregate Queue extraction with acyclic leaf feedback and emits differential fixtures.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../core/main.rhm" open
+  "../../backend/circt.rhm".emit_circt
+  "../../../sims/native/queue.rhm".QueueNative
+  "../../../flow/queue.rhdl".QueueExpansion
+  "aggregate-queue-fixture.rhdl".elaborate_aggregate
+  lib("racket/base.rkt") as rkt
+
+def destination = rkt.getenv("RDS_TEST_DIR")
+for (depth in [1, 2, 3, 8]):
+  for (pipe in [#false, #true]):
+    for (flow in [#false, #true]):
+      def source = elaborate_aggregate(depth, pipe, flow)
+      // No provider is available on the direct path: any attempted expansion fails.
+      def direct = compile_simulation(source, ~lowerings: [QueueNative], ~optimize: #false)
+      def portable = compile_simulation(source, ~expansions: [QueueExpansion], ~optimize: #false)
+      check:
+        direct.objects.length() ~is 1
+        portable.objects.length() ~is 0
+      when destination
+      | def suffix = to_string(depth) ++ "-" ++ (if pipe | "1" | "0") ++ "-" ++ (if flow | "1" | "0")
+        write_simulation(direct, destination ++ "/aggregate-direct-" ++ suffix ++ ".rds")
+        write_simulation(portable, destination ++ "/aggregate-expanded-" ++ suffix ++ ".rds")
+        def materialized = materialize_constructs(source, [QueueExpansion]).elaboration
+        filesystem.write_bytes(destination ++ "/aggregate-" ++ suffix ++ ".mlir", emit_circt(materialized.design).utf8_bytes(), ~exists: #'truncate)

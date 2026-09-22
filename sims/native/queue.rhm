@@ -5,6 +5,7 @@
 import:
   "../../rhodium/core/main.rhm" open
   "../../rhodium/sim/objects.rhm" open
+  "../../rhodium/sim/native-contract.rhm".packed_native_leaves
   "../../flow/queue.rhdl".QueueConstruct
 
 export QueueNative
@@ -22,6 +23,7 @@ def QueueNative = TargetLowering(
       [["reset", 0, 1], ["ingress_in", width, 1], ["ingress_in", 0, width], ["egress_in", 0, 1]],
       [NativeOutput("count", 0, count.type.packed_width(), 0, []),
        NativeOutput("ingress_out", 0, 1, 1, if pipe | [3] | []),
-       NativeOutput("egress_out", 0, width, 3, if flow | [2] | []),
-       NativeOutput("egress_out", width, 1, 2, if flow | [1] | [])])
+       NativeOutput("egress_out", width, 1, 2, if flow | [1] | [])]
+        ++ (for List (leaf in packed_native_leaves(parameters["payload"])):
+              NativeOutput("egress_out", leaf[1], leaf[2], 3, if flow | [NativeSlice(2, leaf[1], leaf[2])] | [], leaf[1], width)))
     NativeImplementation(specialization.contract, model, specialization.contract.effects.map(fun (effect): effect.name)))

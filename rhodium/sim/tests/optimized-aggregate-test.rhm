@@ -1,0 +1,20 @@
+#lang rhombus
+// Verifies the default native optimizer accepts aggregate Queue projections and emits replay models.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../../sims/native/queue.rhm".QueueNative
+  "aggregate-queue-fixture.rhdl".elaborate_aggregate
+  lib("racket/base.rkt") as rkt
+
+def destination = rkt.getenv("RDS_TEST_DIR")
+for (depth in [1, 2, 3, 8]):
+  for (pipe in [#false, #true]):
+    for (flow in [#false, #true]):
+      def source = elaborate_aggregate(depth, pipe, flow)
+      def optimized = compile_simulation(source, ~lowerings: [QueueNative])
+      check: optimized.objects.length() ~is 1
+      when destination
+      | def suffix = to_string(depth) ++ "-" ++ (if pipe | "1" | "0") ++ "-" ++ (if flow | "1" | "0")
+        write_simulation(optimized, destination ++ "/aggregate-optimized-" ++ suffix ++ ".rds")

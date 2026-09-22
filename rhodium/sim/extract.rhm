@@ -7,6 +7,7 @@ import:
   "model.rhm" open
   "optimize.rhm" open
   "objects.rhm" open
+  "native-contract.rhm".verify_native_implementation
 
 export:
   compile_simulation
@@ -110,12 +111,7 @@ fun compile_simulation(subject :: DesignElaboration || Module,
         unless implementation is_a NativeImplementation
         | error(~who: #'compile_simulation, path ++ ": native lowering must return NativeImplementation")
         def contract = body.occurrence.specialization.contract
-        unless same_construct_contract(contract, implementation.contract)
-        | error(~who: #'compile_simulation, path ++ ": native lowering changed boundary contract")
-        unless implementation.effects == contract.effects.map(fun (effect): effect.name)
-        | error(~who: #'compile_simulation, path ++ ": native lowering must preserve every declared effect")
-        unless contract.clocks.length() <= 1 && (for all (reset in contract.resets): reset.timing == "synchronous" && reset.active_high)
-        | error(~who: #'compile_simulation, path ++ ": unsupported native clock/reset contract")
+        verify_native_implementation(implementation, contract, path)
         def boundary = NativeBoundary(
           body.occurrence.specialization.identity.name,
           contract.ports.filter(~keep: fun (port): port.direction == "input"),
@@ -185,14 +181,28 @@ fun compile_simulation(subject :: DesignElaboration || Module,
           operation.places[index].driver
     resolve(occurrence.parent, binding, low, part_width)
 
-  fun native_input(occurrence, index):
+  fun native_input(occurrence, index, low = 0, width = #false):
     def spec = native[occurrence.id][1].inputs[index]
     cond
     | !spec: no_value
     | ~else:
         def port = occurrence.module_def.inputs.find(fun (port): port.name == spec[0])
         unless port | error("native model input not found: " ++ spec[0])
-        input_value(occurrence, port.name, spec[1], spec[2])
+        input_value(occurrence, port.name, spec[1] + low, width || spec[2])
+
+  // Padding preserves the runtime query ABI while demanding only the selected
+  // input leaf. Queue payload queries cannot mix bits between these projections.
+  fun native_dependency(occurrence, dependency):
+    if dependency is_a NativeSlice
+    | block:
+        def input_width = native[occurrence.id][1].inputs[dependency.input][2]
+        def pieces = MutableList[]
+        when dependency.low > 0 | pieces.add(emit(0, dependency.low, [], integer_words(0, dependency.low)))
+        pieces.add(native_input(occurrence, dependency.input, dependency.low, dependency.width))
+        def high = input_width - dependency.low - dependency.width
+        when high > 0 | pieces.add(emit(0, high, [], integer_words(0, high)))
+        if pieces.length() == 1 | pieces[0] | emit(20, input_width, pieces.snapshot())
+    | native_input(occurrence, dependency)
 
   fun result_name(operation, value):
     def outputs:
@@ -209,7 +219,7 @@ fun compile_simulation(subject :: DesignElaboration || Module,
         def binding = native[occurrence.id]
         def pieces = MutableList[]
         def mutable total = 0
-        for (field in binding[1].outputs):
+        for (field in binding[1].outputs.sort(fun (a, b): a.low < b.low)):
           when field.port == port.name
           | def start = math.max(low, field.low)
             def end = math.min(low + width, field.low + field.width)
@@ -217,13 +227,17 @@ fun compile_simulation(subject :: DesignElaboration || Module,
             | def query_width = field.query_width || field.width
               unless query_width is_a PosInt && field.query_low + field.width <= query_width
               | error("native output exceeds query width")
-              def key = [occurrence.id, "native", field.query]
+              def projected = field.dependencies.find(fun (dependency): dependency is_a NativeSlice)
+              def dependency_key = field.dependencies.map(
+                fun (dependency):
+                  if dependency is_a NativeSlice | [dependency.input, dependency.low, dependency.width] | dependency)
+              def key = [occurrence.id, "native", field.query, if projected | dependency_key | #false]
               def signature = [query_width, field.dependencies]
               when query_signatures.has_key(key) && query_signatures[key] != signature
               | error("native query has inconsistent width or dependencies")
               query_signatures[key] := signature
               unless resolved.has_key(key)
-              | def dependencies = field.dependencies.map(fun (index): native_input(occurrence, index))
+              | def dependencies = field.dependencies.map(fun (dependency): native_dependency(occurrence, dependency))
                 def spec = binding[1]
                 when spec is_a NativeFunction && field.query != 0 | error("native function exposes only query zero")
                 resolved[key] := if spec is_a NativeFunction | emit(spec.opcode, query_width, dependencies, spec.immediates) | emit(29, query_width, dependencies, [binding[0], field.query])

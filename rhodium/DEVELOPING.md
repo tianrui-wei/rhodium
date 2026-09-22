@@ -444,9 +444,10 @@ produce the same public IR and CIRCT representation.
 
 ## Native consumer integration
 
-`sim/extract.rhm` and `sim/objects.rhm` import only `core/main.rhm` for
+`sim/extract.rhm`, `sim/objects.rhm`, and `sim/native-contract.rhm` import
+`core/main.rhm` for
 public hardware and construct contracts. The remaining simulator modules
 import sibling simulator modules and Racket/Rhombus libraries. The standalone
 compiler and runtime have no frontend dependencies. `sims/native/queue.rhm`
-imports the public Flow Queue identity, core contracts, and simulator target
-records; the generic extractor never imports Flow.
+imports the public Flow Queue identity, core contracts, simulator target
+records, and packed leaf descriptors from `sim/native-contract.rhm`; the generic extractor never imports Flow.

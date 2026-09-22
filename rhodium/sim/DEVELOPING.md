@@ -103,8 +103,11 @@ carry contract ports and no portable body. Both contribute to the same model,
 scheduler, prepare phase, and simultaneous publication. Boundary connections use
 port names so portable implementation port order cannot change the ABI.
 `objects.rhm` owns `NativeImplementation`; library registration remains in
-`sims/native`. Native contract/range validation and nested composition extraction
-still need completion before treating this adapter boundary as general-purpose.
+`sims/native`. `native-contract.rhm` checks packed input/output ranges, complete
+nonoverlapping output coverage, leaf-sensitive dependency containment, declared
+effects, and the supported Queue clock/reset/query ABI. Native semantics still
+require owner-provided implementations and differential validation. Nested
+composition extraction remains a separate integration gate.
 
 The focused host tests prove skipped expansion and occurrence-local choices.
 Runtime replay checks every public output before/after edges against a separate
@@ -114,3 +117,14 @@ the Verilator runner adds the portable SystemVerilog path. Repeated Queue
 instances compare direct, mixed, and expanded choices with independent traffic.
 `ci-host-native-test` owns this host coverage; package/import changes also run
 boundary and CI-routing audits.
+
+Queue payload queries use `NativeSlice` only for a matching payload projection.
+The extractor pads unobserved input bits to preserve the runtime query width,
+then observes only the certified output slice. State capture still reads the
+complete payload. Keep cache keys distinct for different dependency slices and
+assemble native outputs by packed offset, independent of descriptor order.
+The aggregate fixture deliberately connects one output field to a different
+input field; it detects false whole-payload cycles and swapped packed ranges.
+Run the contract rejection tests, aggregate replay, and the default optimizer
+path when changing this representation. CI installs the standalone compiler's
+JSON and Boost headers for the native host lane.

@@ -9,8 +9,8 @@ cd "$repo_dir"
 export RDS_TEST_DIR="$selective_build"
 export PLTCOMPILEDROOTS="$selective_compiled"
 unset RHODIUM_PRECOMPILED
-tools/run-racket-tests.sh rhodium/sim/tests/selective-queue-test.rhm rhodium/sim/tests/selective-occurrence-test.rhm
+tools/run-racket-tests.sh rhodium/sim/tests/*-test.rhm
 "${CC:-cc}" -std=c17 -pthread -O2 -Wall -Wextra -Werror -fPIC -shared \
   rhodium/sim/runtime/*.c -ldl -o "$selective_build/librhodium_sim.so"
-python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" --compiled --twins
+python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" --compiled --twins --aggregate --optimized
 printf 'Generated artifacts: %s\n' "$selective_build"

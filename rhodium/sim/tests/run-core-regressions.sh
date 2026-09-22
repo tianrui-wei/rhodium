@@ -12,6 +12,7 @@ export PYTHONDONTWRITEBYTECODE=1
 unset RHODIUM_PRECOMPILED
 export RDS_OPTIMIZER="${RDS_OPTIMIZER:-$(bash rhodium/sim/compiler/run.sh --print-path)}"
 env PLTCOLLECTS="$repo_dir": "${RACKET:-racket}" -y rhodium/sim/tests/emit-fixtures.rhm
+env PLTCOLLECTS="$repo_dir": "${RACKET:-racket}" -y sims/native/tests/contract-test.rhm
 runtime_sources=(rhodium/sim/runtime/*.c)
 runtime_flags=()
 unset RDS_TEST_ASM

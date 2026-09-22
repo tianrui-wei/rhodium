@@ -46,3 +46,11 @@ dependencies and checks empty transport, invalid pipes, current-state aliases,
 narrow/wide state, ancestor regions, grant ownership, and local guards against
 transactional reference execution. This optimization does not replace retained
 construct selection before portable expansion.
+
+`contracts.rhm` exports existing interface-transform field bindings, protocol
+ancestry, and trace routes as optional `SimulationContract` metadata. It reads
+existing entities without elaborating projections or recognizing implementation
+bodies. `tests/contract-test.rhm` checks stable versus ambient-input maps,
+packed field widths, graph immutability, report round trips, compiler remapping,
+and invalid bindings. The simulator core regression runner includes this test;
+its metadata supplements the executable retained-construct protocol.

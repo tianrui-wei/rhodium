@@ -451,3 +451,6 @@ import sibling simulator modules and Racket/Rhombus libraries. The standalone
 compiler and runtime have no frontend dependencies. `sims/native/queue.rhm`
 imports the public Flow Queue identity, core contracts, simulator target
 records, and packed leaf descriptors from `sim/native-contract.rhm`; the generic extractor never imports Flow.
+`sims/native/contracts.rhm` imports core, `SimulationContract`, and
+`frontend/layers/interface.rhm` to export existing interface-transform metadata.
+This optional adapter does not participate in implementation selection.

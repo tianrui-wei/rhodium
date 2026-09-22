@@ -111,21 +111,13 @@ stand in for a declared boundary clock. Derived controls need explicit support.
 The optional `SemanticNode` mechanism remains descriptive and is not the
 executable construct protocol. The dependent branch establishes the initial mixed-design execution milestone.
 
-## Next execution gates
+## Completion status
 
+All six execution gates are implemented and locally validated. The final
+acceptance audit and measured limitations appear at the end of this document.
 The evidence sections below are chronological; their pending-work statements
-record the scope at that point. This list is the current remaining scope:
-
-- Complete effect/error coverage, preserving assertions and exactly-once effects
-  across direct selection and portable expansion.
-- Migrate the previous simulator regression suite, including core-only inputs.
-- Measure elaboration and compilation time, emitted size, peak memory, and
-  throughput for identical direct and expanded workloads after correctness.
-
-Typed payload regions, frontend capture extraction, retained maps, nested native
-composition, and initial captured-map execution are implemented; see the later
-evidence sections. Completion requires the remaining gates above, not just the
-initial mixed Queue milestone.
+record the scope at that point, not current outstanding work. Simulator sources
+remain on the separate dependent branch. No remote CI success is claimed.
 
 ## Dependent native progress
 
@@ -519,3 +511,245 @@ functional-update reference now includes an explicit shared range guard.
 Boundary, license-header, CI-routing, example-reference, and whitespace checks
 pass. The dependent simulator's functional-update regression retains the compact
 operation for single-element, power-of-two, wide-selector, and multiword cases.
+
+## Ordinary core compiler/runtime migration
+
+The [dependent core regression migration](https://github.com/tianrui-wei/rhodium/commit/fcf4141)
+adds `make sim-core-regression-test` and integrates it into the selective host
+runner. Fresh-root core fixture elaboration passes. Compiler interchange,
+deterministic output, malformed inputs, 800 wide arithmetic evaluations, and
+1,440 regrouped mask/state evaluations pass. Typed semantic exchange passes its
+compiled one/four-worker region and decode checks. Eight ordinary runtime modes
+and the x86 assembly mode pass independent arithmetic, hierarchy, memory,
+aggregate, assertion, and pipeline oracles. All fifteen generated-C scheduling
+modes pass, followed by functional updates, one-hot selections, demand-gated
+cones, native-object attachment/tracing, callback failure recovery, and executable
+identity checks. Each arithmetic replay checks 59,400 independent observations.
+
+The attachment fixtures now construct FIFO/broadcast object ABI models directly,
+without restoring post-expansion library recognition. The migrated regression
+exposed and verified the vector-update retention fix above. Boundary, license,
+CI-routing, shell, and whitespace checks pass. Remaining library/native-object,
+inspection, and harness fixture migration, integrated validation, and performance
+measurements stay open; this is focused evidence, not a complete suite baseline.
+
+## Region, primitive, and inspection migration
+
+The [dependent inspection follow-up](https://github.com/tianrui-wei/rhodium/commit/c21b92a)
+restores contract-guided grouping and lifted-primitive regressions. Grouping
+passes 10,000 independent arithmetic/shared-observer comparisons, analysis-only
+ordering checks, and malformed-contract rejection. Five primitive execution
+modes pass 1,000 cycles across control-mask boundaries 1/3/64/65, packet ownership,
+scoreboard old-state semantics, debug/release generation, parallel schedules,
+failed-host retry, and reattachment.
+
+The package-owned inspection CLI and its original lookup regression also pass,
+covering sparse/default selection, all result slices, source-mapped plans, and
+real x86 compiler-output disassembly. The tool reports static instruction and
+register observations rather than dynamic cost. Both runners include the restored
+groups. Boundary, license, CI-routing, shell, CLI-help, and whitespace checks pass.
+Library/native-object and harness migration, integrated validation, and
+performance measurements remain open.
+
+## Native object, library, and replication migration
+
+The [dependent object/library migration](https://github.com/tianrui-wei/rhodium/commit/aedc795)
+restores the original protocol oracle files without changing their logic. Explicit
+object ABI fixtures replace the removed post-expansion registry. Interpreter and
+generated-C replay pass all 36 FIFO width/depth/pipe/flow configurations with
+functional and payload-free control models, offer replacement, round-robin
+rotation, valid-only pipes, broadcasts, packet arbitration, malformed descriptors,
+and bounded snapshot replication. Actual Flow RTL remains the independent
+reference for pipe/broadcast/packet behavior. Payload-free test fixtures do not
+authorize changing observable public construct payloads.
+
+Shared-Queue replication now selects the retained Queue through `QueueNative`.
+Eleven host checks verify byte/work budgets and one state owner; 800-cycle
+replay checks ordinary and native shared cones. The canonical standard-library
+examples additionally pass six generic execution modes, including x86 assembly
+and generated C, against independent scoreboard, queue, pipe, arbiter, and
+credited-transport oracles. This validates generic fallback without claiming
+direct target registrations for every library construct.
+
+`make sim-object-regression-test` and the selective host runner own this coverage.
+Simulator artifact roots now honor `TMPDIR` to avoid the observed temporary-
+filesystem quota failures. Boundary, license-header, CI-routing, shell syntax,
+and whitespace checks pass. Remaining matcher/ALU/TLB and harness migration,
+integrated validation, and performance measurements remain open.
+
+## Matcher and ALU differential migration
+
+The [dependent matcher/ALU migration](https://github.com/tianrui-wei/rhodium/commit/b375a6a)
+restores the original independent oracles through explicit native ABI fixtures
+and actual library RTL references. Six rotating-matcher shapes pass 700 cycles
+each in raw, native, generated-C, and parallel execution. A 250-cycle feedback
+fixture checks that later-column requests can depend on earlier grants without
+introducing a false cycle. Three retained-construct checks validate shared query
+slices and reject invalid ranges or inconsistent dependencies. RV32/RV64 ALUs
+pass 24,000 physical-control cases in raw and native execution, including
+generated C and stateless query ownership.
+
+The object regression runner includes both groups. Boundary, license-header,
+CI-routing, shell syntax, and whitespace checks pass. These are focused results;
+TLB and harness migration, fresh integrated validation, and performance
+measurements remain open. Simulator sources remain on the dependent branch.
+
+## Sv39 TLB differential migration
+
+The [dependent TLB migration](https://github.com/tianrui-wei/rhodium/commit/8f94cdf)
+restores the independent Sv39 oracle at depths 2/4/8, each for 6,000 cycles
+across six raw/native/generated-C/parallel modes. Actual processor RTL remains
+the reference; explicit ABI fixtures provide optimized and unoptimized native
+models without post-expansion recognition. Demand and probe permissions,
+noncanonical addresses, overlapping entries, reset/fill/invalidate priority,
+replacement, and compiled-library reattachment pass. Three additional execution
+modes preserve TLB contents and replacement priority after a failed host effect
+and accept a clean retry.
+
+The object runner includes this group. Fresh-root elaboration, native fixture
+compilation, the complete TLB replay, boundary/license/CI-routing checks, shell
+syntax, and whitespace validation pass. Remaining work includes harness and
+legacy coverage auditing, fresh integrated validation, and performance
+measurements. These focused results do not replace a complete-suite baseline.
+
+## Native harness regression migration
+
+The [dependent harness migration](https://github.com/tianrui-wei/rhodium/commit/73b741b)
+restores benchmark audit and host-loader utilities under `sims/native`, with
+package-local tests. Timing-gate rejection, subprocess environment isolation,
+shared-inode staging, and immutable artifact audits pass. Loader trace hashing
+passes 250,000 independent reset/handshake/wide-input comparisons; sized
+transactions, acknowledged boot, polling, reset, and response errors pass.
+The original runtime smoke driver also compiles against the current runtime.
+These helper tests do not establish an end-to-end SoC boot or measured
+profile-guided speedup.
+
+The selective runner includes the harness gate. Boundary, license-header,
+CI-routing, shell syntax, and whitespace checks pass. A fresh integrated run
+has been started; its result is not yet evidence of completion. Optional legacy
+profiling/specialization coverage auditing and performance measurements remain
+open alongside integrated validation.
+
+## Profiling helper regression migration
+
+The [dependent profiling migration](https://github.com/tianrui-wei/rhodium/commit/da00b8d)
+restores layout sample decoding and scratch inspection under `sims/native`.
+Three unit tests validate precise-load/lost-record decoding, allocation-range
+precedence, and malformed records. The independent assembly/ELF fixture checks
+spill eligibility, overlapping-slot rejection, SIMD aliases, and virtual-address
+sample attribution. Both groups pass and join the harness runner. Boundary,
+license-header, CI-routing, shell syntax, and whitespace checks pass.
+
+This is parser/analysis validation without PMU permissions, not a live profiling
+or performance claim. The integrated simulator run remains pending; external
+specialization and ordinary-core Verilator coverage still need auditing, along
+with the direct-versus-expanded performance gate.
+
+## External specialization and ordinary-core Verilator migration
+
+The [dependent legacy comparison migration](https://github.com/tianrui-wei/rhodium/commit/875305c)
+restores the optional external generated-C specializer and ordinary-core
+Verilator comparison. Eight specialization modes pass their original four-engine
+512-cycle oracle, including invalid previews, state banks, failed publication,
+retry/reattachment, strict diagnostics, and malformed artifact rejection.
+The runner explicitly builds the compiler dependencies required by specialization.
+
+Hierarchy and pipeline fixtures each pass 10,000-cycle full-trace comparisons
+across eight native/reference/generated-C/parallel/Verilator modes, followed by
+five matching-digest repetitions at 10,000 cycles. These comparisons reuse the
+previously validated ordinary-core fixture batch. Their timing reports were
+produced under concurrent validation load and are not performance evidence.
+Boundary, license-header, CI-routing, shell syntax, and whitespace checks pass.
+Fresh integrated and retained-construct Verilator runs remain active; the
+retained direct-versus-expanded performance gate remains open.
+
+## Fresh retained Verilator and Flow contract export validation
+
+The complete retained-construct CIRCT/Verilator runner passes again using the
+fresh integrated host batch's models. Scalar and nested compositions, repeated
+occurrence state, captured scalar/record/vector/multiword/nested payloads, and
+18 mixed Queue/pipe configurations match independent pre/post-edge oracles in
+native interpreter, generated C, and Verilator execution. This closes the fresh
+retained Verilator gate; the broader integrated host run is still active.
+
+The [dependent contract-export migration](https://github.com/tianrui-wei/rhodium/commit/11296173)
+restores the optional interface-transform metadata adapter without introducing
+post-expansion implementation recognition. All 23 original checks pass with a
+fresh compiled root: packed bindings, stable/ambient protocol ancestry, routes,
+graph immutability, report round trips, compiler remapping, and invalid bindings.
+The core regression runner includes this gate. Boundary, license-header,
+CI-routing, shell syntax, and whitespace checks pass. Direct-versus-expanded
+benchmark infrastructure is under validation; no timing result is claimed yet.
+
+## Fresh integrated native validation
+
+A fresh `make sim-selective-test` run completed successfully on the dependent
+native worktree after the contract-export migration. The retained host batch
+passes 889 checks; all base/nested/repeated/captured aggregate/multiword/pipe,
+assertion-retry, and external-host interpreter/generated-C replays pass. Every
+migrated standalone runtime group passes, followed by ordinary-core compiler,
+semantic exchange, runtime, generated-C, inspection, and Flow-contract export.
+The object batch passes 14 host checks and all native-object/library/replication,
+matcher, ALU, and TLB replays, including supported assembly execution. Harness,
+250,000-case loader traces, workload transactions, layout decoding, and scratch
+inspection also pass. The separate complete retained Verilator run passed as
+recorded above; optional external-specialization and ordinary-core Verilator
+comparisons have their separately recorded passing results.
+
+This supersedes the earlier 777-check retained-host baseline. It does not claim
+remote CI success: PR #4 currently reports no checks. The benchmark sources are
+still under smoke validation and were not part of this integrated correctness
+run. Repeated direct-versus-expanded measurements and the final delivery audit
+remain open.
+
+## Reproducible selective benchmark infrastructure
+
+The [dependent benchmark](https://github.com/tianrui-wei/rhodium/commit/08e2d4f)
+measures matched retained/expanded circuits with explicit expansion counts,
+per-circuit elaboration/lowering times, generated-C emission/compilation times,
+artifact sizes, peak process memory, and independently checked throughput.
+A depth-eight smoke comparison passes both protocol configurations in direct
+and expanded interpreter/generated-C execution. The full matrix is running:
+depths 1/3/8, both configurations, three repetitions, and one million checked
+cycles per execution, pinned to one initially idle CPU.
+
+Emission batches share Racket startup while retaining separate circuit phase
+timings; peak lowering memory describes the matched batch. The report records
+raw samples, source/tool identities, affinity, and includes host stimulus,
+oracle, and port access in checked-cycle throughput. No completed full-matrix
+performance result or whole-SoC speedup is claimed yet.
+
+## Final measurements and acceptance audit
+
+The completed [measurement report](https://github.com/tianrui-wei/rhodium/blob/891457eba22036781ee0cc0b47aa6ba5b4cf0333/rhodium/sim/SELECTIVE_MEASUREMENTS.md) records the exact source revision,
+reproduction command, host/tool identities, raw-report hash, medians, and limits.
+All 36 model samples and 72 million checked interpreter/generated-C cycles pass.
+Direct Queue expansion counts are zero; expanded counts are one. Model hashes
+are stable across repetitions and execution checksums agree. A cache-stability
+guard rejects bytecode changes during measured emission; earlier unstable-cache
+process/RSS samples were discarded.
+
+For these small eight-bit mixed Queue circuits, direct images are 792–804 bytes
+versus 876–1,942 expanded. Median lowering at depths three/eight is 3.97–4.75 ms
+versus 7.42–7.77 ms. Compiled checked throughput is roughly similar overall;
+expanded depth-one RTL is faster. Peak batch RSS is effectively unchanged
+(262.34/262.60 MiB medians). Throughput includes host stimulus, the independent
+oracle, and port access. These measurements do not establish whole-SoC speedup.
+
+| Gate | Acceptance evidence |
+|---|---|
+| Public contracts and scoped composition | Core construct/composition/operation tests cover nominal identities, typing, complete leaf dependencies, ownership/drivers, true versus false cycles, clocks/resets, and effect mappings. Core remains independent of frontend, Flow, and simulation. |
+| Deferred local selection | Frontend declaration tests, recursive resolver tests, retained Queue counters/sentinels, and repeated-occurrence replay establish selection before bodies, per-occurrence choices, cached portable definitions, and ambiguity/non-progress diagnostics. |
+| Portable RTL/SystemVerilog | The 32-configuration Queue comparison and retained pipe comparisons preserve normalized per-module CIRCT, names, hierarchy, and dependencies. Event manifest comparisons and event CIRCT fixtures preserve tracing. Fresh emitted SystemVerilog retains Queue/Counter modules, packed interfaces, named state, and the counter assertion. |
+| Unified execution | The completed selective host suite covers native/expanded/mixed siblings, independent state, shared scheduling, pre/post-edge observation, reset, assertion failure/retry, and external callback preflight/publication. |
+| Differential correctness | The fresh integrated run passes 889 retained host checks, all retained interpreter/generated-C replays, and every migrated runtime/core/object/harness group. The complete retained CIRCT/Verilator run passes separately, as do optional external-specialization and ordinary-core Verilator comparisons. |
+| Nested and higher-order semantics | Typed payload-region tests and captured scalar/record/vector/65-bit/nested-aggregate replays preserve live captures and leaf-sensitive feedback. Nested compositions and mixed pipe families pass three-way replay. The repeated measurement matrix above completes the performance gate. |
+| Delivery | Separate worktrees preserve the user's primary checkout. PR #4 contains public IR/frontend/portable Flow changes and evidence, with no `rhodium/sim/` or `sims/native/` implementation files. The dependent branch contains the native consumer and measurement tools. |
+
+Supported limits remain explicit in the owning READMEs: derived clock controls
+need richer contracts, native execution uses its declared synchronous timing
+boundary, and external side effects already performed by a failing callback
+cannot be rolled back. Direct adapters remain consumer-owned; generic fallback
+supports ordinary core inputs and constructs without a direct adapter. Runtime
+and performance evidence does not claim every Flow construct has a direct native
+implementation. PR #4 reports no remote checks; the evidence here is local.

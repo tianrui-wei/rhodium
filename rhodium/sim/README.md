@@ -134,7 +134,7 @@ payload bit observed, including carry across bit 63, 65-bit wraparound, and
 unaligned element packing. All three shapes reject genuine same-field/element
 bypass cycles. A record containing a vector of 65-bit records passes the same
 three-way matrix, preserving captures through all three aggregate boundaries.
-Broader effects coverage remains pending. [Implementation rules](DEVELOPING.md) describe
+[Implementation rules](DEVELOPING.md) describe
 publication, ownership and focused validation.
 
 Native implementations must completely cover each output port with disjoint
@@ -152,8 +152,8 @@ always-capture pipes at one, two, and four stages, including flush options.
 They match an independent 512-cycle pre/post-edge oracle in interpreter,
 generated C, and materialized CIRCT/Verilator, including optimized models.
 This path preserves one shared schedule and does not require a pipe-specific
-native callback. Broader effect/error validation and performance measurement
-remain in progress.
+native callback. Assertion and external-effect guarantees are described below;
+performance measurements are tracked in the implementation plan.
 
 Guarded assertions inside retained portable constructs survive extraction and
 optimization. The selective-effects regression checks exactly one named assertion
@@ -161,7 +161,7 @@ and runs 48 failure/retry traces across native and expanded Queue state in
 interpreted and compiled modes, including optimization. Rejected edges preserve
 register/Queue state and diagnostic cycle numbers; retry matches execution that
 never attempted the rejected edges. Reset and disabled guards suppress checks.
-External callback effects require separate validation.
+External callback effects follow the separate contract below.
 
 Explicit retained host adapters use five bound word inputs and registered output
 queries. Lowering verifies their clock/reset association and output ABI before

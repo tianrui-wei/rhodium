@@ -77,8 +77,8 @@ reuse while an old snapshot still references a slot.
 ## Validation
 
 The [test runner](tests/run-selective.sh) exercises retained selection and
-native/expanded Queue replay. This dependent worktree restores the previous
-compiler/runtime; its broader optimization suite still needs migration.
+native/expanded Queue replay and invokes the migrated runtime, core, object,
+and harness regression groups described below.
 Use independent arithmetic/queue oracles and original-versus-compiled replay,
 including malformed supported inputs, repeated evaluation, failed publication,
 reattachment, strict/release behavior and parallel execution. Changes spanning
@@ -337,6 +337,34 @@ reference, generic, optimized, parallel, generated-C, and Verilator execution.
 Its timing report is separate from correctness evidence and does not measure
 retained direct-versus-expanded constructs. Use an otherwise idle host for
 performance interpretation.
+
+## Retained versus expanded measurement
+
+Run `python3 rhodium/sim/tests/benchmark-selective.py ARTIFACT_DIRECTORY` after
+the selective correctness gates pass. The default matrix uses depths 1/3/8,
+both non-bypass and bypass/replacement configurations, three repetitions, and
+one million checked cycles per execution. `--cpu` pins the entire measurement
+to one available CPU; `--cycles`, `--repetitions`, and `--depths` support a
+focused smoke run. Use an otherwise idle host for reported performance.
+
+The runner creates a fresh compiled root and warms bytecode once. Its Rhombus
+emitter separately times retained frontend elaboration and selected lowering,
+asserting zero Queue expansions for direct selection and one for fallback.
+Circuit emission is batched by mode and repetition to share Racket startup;
+direct/expanded batch order alternates by repetition. Garbage collection precedes
+each separately timed circuit. Lowering-process wall time and peak RSS describe
+the entire matched batch, not an individual circuit. Each model runs in interpreter
+and generated-C modes with one worker, identical host compiler flags and seed,
+and matching checksums. A separate C oracle observes every output before and
+after each edge, including invalid payloads and pending reset. Report throughput
+as checked cycles per second: stimulus, oracle, and port access are included.
+
+`report.json` records every sample, elapsed compilation/emission times, binary
+and source sizes, per-process peak RSS, tool versions, affinity, source commit,
+and working-tree status. Raw logs and generated artifacts remain external.
+Per-circuit phase timings exclude bytecode construction; process timings include
+startup. These small mixed Queue circuits establish a reproducible comparison,
+not whole-SoC performance.
 
 ## Native object and replication regression suite
 

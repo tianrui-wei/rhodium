@@ -8,5 +8,8 @@ public `QueueConstruct` identity. Pass it in `compile_simulation`'s `~lowerings`
 list and pass `QueueExpansion` in `~expansions` for portable fallback. Selection
 happens before the Queue implementation executes.
 
-This adapter is being integrated with the native runtime. The full completion
-criteria remain in the [selective lowering plan](../../rhodium/core/SELECTIVE_LOWERING_PLAN.md).
+The adapter supports mixed native/portable execution, including nested
+compositions and captured aggregate payload computations. See the
+[simulator contract](../../rhodium/sim/README.md) for supported timing, state,
+and effect behavior, and the [selective lowering plan](../../rhodium/core/SELECTIVE_LOWERING_PLAN.md)
+for validation evidence and performance gates.

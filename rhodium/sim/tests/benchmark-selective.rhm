@@ -1,0 +1,49 @@
+#lang rhombus
+// Measures retained elaboration and selected lowering for identical mixed Queue circuits.
+// SPDX-License-Identifier: Apache-2.0
+import:
+  "../main.rhm" open
+  "../../core/main.rhm" open
+  "../../../sims/native/queue.rhm".QueueNative
+  "../../../flow/queue.rhdl" open
+  "selective-queue-fixture.rhdl".elaborate_mixed
+  lib("racket/base.rkt") as rkt
+
+def mode = "" ++ rkt.getenv("RDS_BENCH_MODE")
+unless mode == "direct" || mode == "expanded"
+| error("expected direct or expanded benchmark mode")
+def direct = mode == "direct"
+
+fun emit_case(depth, enabled, destination, label):
+  def mutable expansions = 0
+  def provider = ExpansionProvider(
+    QueueConstruct,
+    fun (specification):
+      expansions := expansions + 1
+      QueueExpansion.expand(specification))
+  rkt.#{collect-garbage}()
+  def start = rkt.#{current-inexact-milliseconds}()
+  def source = elaborate_mixed(depth, enabled, enabled)
+  def elaborated = rkt.#{current-inexact-milliseconds}()
+  def model = compile_simulation(source, ~expansions: [provider], ~lowerings: (if direct | [QueueNative] | []))
+  def lowered = rkt.#{current-inexact-milliseconds}()
+  unless expansions == (if direct | 0 | 1)
+  | error("unexpected Queue implementation expansion count")
+  write_simulation(model, destination)
+  println(label ++ to_string(elaborated - start) ++ " " ++ to_string(lowered - elaborated) ++ " " ++ to_string(expansions))
+
+cond
+| rkt.getenv("RDS_BENCH_BATCH"):
+    def depths = ("" ++ rkt.getenv("RDS_BENCH_DEPTH")).split(",")
+    def repetition = "" ++ rkt.getenv("RDS_BENCH_REPETITION")
+    def directory = "" ++ rkt.getenv("RDS_BENCH_OUTPUT")
+    for (depth_text in depths):
+      def depth = rkt.#{string->number}(depth_text)
+      for (enabled in [#false, #true]):
+        def name = depth_text ++ "-" ++ (if enabled | "1" | "0") ++ "-" ++ repetition ++ "-" ++ mode
+        emit_case(depth, enabled, directory ++ "/" ++ name ++ ".rds", name ++ " ")
+| ~else:
+    def options = "" ++ rkt.getenv("RDS_BENCH_OPTIONS")
+    unless options == "0" || options == "1"
+    | error("expected benchmark options 0 or 1")
+    emit_case(rkt.#{string->number}(rkt.getenv("RDS_BENCH_DEPTH")), options == "1", "" ++ rkt.getenv("RDS_BENCH_OUTPUT"), "")

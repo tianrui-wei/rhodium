@@ -11,4 +11,6 @@ for test in benchmark_single_test loader-trace-test workload-host-test; do
     "sims/native/tests/$test.cpp" -o "$test_dir/$test"
   "$test_dir/$test"
 done
+PYTHONDONTWRITEBYTECODE=1 python3 sims/native/tests/layout_profile_test.py
+bash sims/native/tests/scratch-inspect-test.sh
 printf 'Native harness regression artifacts: %s\n' "$test_dir"

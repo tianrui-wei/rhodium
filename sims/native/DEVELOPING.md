@@ -30,3 +30,10 @@ artifact directory can be supplied; generated binaries and scratch files stay
 outside the checkout and respect `TMPDIR`. The selective simulator runner
 includes this gate. Keep original transaction and timing-validation oracles
 when changing these helpers.
+
+The same runner checks `profile-layout.py` sample decoding and allocation
+attribution without requiring PMU access, and `scratch-inspect.cpp` spill-slot
+eligibility, SIMD register aliases, and ELF load-sample attribution. Their
+package-local regressions preserve conservative rejection of overlapping slots
+and malformed records. Parser validation does not claim live PMU collection or
+dynamic performance measurements on this host.

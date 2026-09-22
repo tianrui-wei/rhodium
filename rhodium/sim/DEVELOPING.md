@@ -279,6 +279,21 @@ retained-construct replays.
 - `fifo-batch-test.cpp` checks batched control preparation against reference
   execution with wide payloads, late dependencies, and host-publication failures.
 
+- `contract-kernel-test.cpp` checks captured maps, guarded branches, feedback,
+  snapshot updates, and malformed kernel programs across generated-code modes.
+- `decoder-specialization-test.cpp` checks constant-field specialization against
+  independent first-match/default decoding, including state and reattachment.
+- `payload-pool-test.cpp` checks concurrent ingress and shared selection without
+  leaking stale previews or failed publication into committed payload storage.
+- `payload-lifetime-test.cpp` checks ordered lifetime sharing and exact capacity,
+  preserving intermediate readers and control independence from pooled payloads.
+- `payload-exchange-test.cpp` checks routed payload ownership and handle layouts
+  against original execution, including multiword data and unsafe-sharing rejection.
+- `flow_cache_test.cpp` checks cross-object cache keys, independent publication,
+  speculative retry, and compiled-library reattachment.
+- `semantic_structure_test.cpp` checks demanded-field provenance, feedback,
+  pruning, wide keys, and malformed semantic mappings.
+
 These preserve the original independent oracles. Remaining compiler optimization,
 object-family, arithmetic, and frontend fixture migration is tracked in the
 [selective lowering plan](../core/SELECTIVE_LOWERING_PLAN.md).

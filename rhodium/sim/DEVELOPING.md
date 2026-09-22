@@ -261,6 +261,13 @@ retained-construct replays.
 - `fifo-derived-test.cpp` checks enqueue-time derived fields at depths one through
   three and preserves the original transition for incompatible pipeline storage.
 
+- `bit-relations-test.cpp` exhausts decoder inputs and control bits for narrow
+  and multiword Boolean simplification, including overlapping first-match rows.
+- `selector-columns-test.cpp` checks regrouped sparse selector columns against
+  independent software, including disabled rows and serialized model round trips.
+- `ring-selection-test.cpp` compares reference and compiled wide FIFO head/view
+  selection under wraparound, strict invalid selectors, parallelism, and reattachment.
+
 These preserve the original independent oracles. Remaining compiler optimization,
 object-family, arithmetic, and frontend fixture migration is tracked in the
 [selective lowering plan](../core/SELECTIVE_LOWERING_PLAN.md).

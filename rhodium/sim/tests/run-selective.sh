@@ -43,4 +43,5 @@ python3 rhodium/sim/tests/selective-effects-runtime.py "$RDS_EFFECTS_DIR"
 cp "$selective_build/librhodium_sim.so" "$RDS_HOST_DIR/"
 python3 rhodium/sim/tests/selective-host-runtime.py "$RDS_HOST_DIR"
 bash rhodium/sim/tests/run-runtime-regressions.sh "$selective_build"
+bash rhodium/sim/tests/run-core-regressions.sh
 printf 'Generated artifacts: %s\n' "$selective_build"

@@ -297,3 +297,23 @@ retained-construct replays.
 These preserve the original independent oracles. Remaining compiler optimization,
 object-family, arithmetic, and frontend fixture migration is tracked in the
 [selective lowering plan](../core/SELECTIVE_LOWERING_PLAN.md).
+
+## Ordinary core IR regression suite
+
+`make sim-core-regression-test` invokes `tests/run-core-regressions.sh`. It emits
+ordinary core fixtures with a fresh compiled root, then runs the migrated
+compiler interchange, typed semantic exchange, runtime-oracle, and generated-C
+suites. The selective host runner invokes this independent core-only path after
+its retained-construct and standalone runtime groups. An optional existing
+artifact directory can be supplied to the script; elaboration still receives
+a newly created compiled root. Generated outputs stay outside the checkout.
+
+`emit-fixtures.rhm` owns arithmetic widths across machine-word boundaries,
+aggregate feedback, hierarchy, memory, assertions, and pipeline fixtures. The
+Python suites share only runtime ABI access; independent arithmetic and state
+oracles remain in `runtime_test.py`. Preserve raw/reference variants, malformed
+image diagnostics, repeated evaluation, failed publication, and generated-library
+identity checks when adapting these fixtures. Runtime attachment fixtures in
+`codegen_test.py` construct FIFO/broadcast object ABI models directly; library
+recognition after elaboration is not part of this runtime test. The runner also
+checks the x86 assembly path when the host toolchain supports it.

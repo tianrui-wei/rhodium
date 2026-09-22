@@ -340,6 +340,9 @@ performance interpretation.
 
 ## Retained versus expanded measurement
 
+Reviewed summary evidence belongs in [SELECTIVE_MEASUREMENTS.md](SELECTIVE_MEASUREMENTS.md);
+raw reports and generated artifacts remain external.
+
 Run `python3 rhodium/sim/tests/benchmark-selective.py ARTIFACT_DIRECTORY` after
 the selective correctness gates pass. The default matrix uses depths 1/3/8,
 both non-bypass and bypass/replacement configurations, three repetitions, and

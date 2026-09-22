@@ -93,7 +93,8 @@ passes and runtime code-generation flags are separate controls.
 
 Eligibility checks can retain the ordinary implementation even when an option is
 selected. Harnesses may choose an explicit combination of flags; their presets
-are not runtime defaults. Performance validation for retained selection remains pending.
+are not runtime defaults. [Retained-selection measurements](SELECTIVE_MEASUREMENTS.md)
+report matched small Queue workloads and their limits.
 
 Strict execution checks partial operations even in an unselected mux arm.
 Release compilation assumes the design's established index/selector bounds;

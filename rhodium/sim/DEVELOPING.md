@@ -268,6 +268,17 @@ retained-construct replays.
 - `ring-selection-test.cpp` compares reference and compiled wide FIFO head/view
   selection under wraparound, strict invalid selectors, parallelism, and reattachment.
 
+- `matcher-prefix-test.cpp` preserves grant reuse only when update operands match
+  the complete request prefix, and replays stalls and reset.
+- `packed_matcher_test.cpp` checks arbitration against independent software,
+  including prefix feedback, grant reuse, split priority ownership, and reattachment.
+- `idle-fifo-test.cpp` compares inductively empty FIFO folding with original
+  execution, retaining bypass previews, strict diagnostics, and failed-edge retry.
+- `stationary-matcher-test.cpp` preserves independent query operands and priority
+  state through folding, including invalid grants and failed host callbacks.
+- `fifo-batch-test.cpp` checks batched control preparation against reference
+  execution with wide payloads, late dependencies, and host-publication failures.
+
 These preserve the original independent oracles. Remaining compiler optimization,
 object-family, arithmetic, and frontend fixture migration is tracked in the
 [selective lowering plan](../core/SELECTIVE_LOWERING_PLAN.md).

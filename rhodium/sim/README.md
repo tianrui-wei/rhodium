@@ -46,6 +46,19 @@ plan and storage compatibility. Replacement preserves current state.
 It preserves callbacks and stops at a failing edge after any preceding commits.
 The caller must exclusively own a simulator during API calls.
 
+## Inspect generated work
+
+`inspect_ir.py` compares original and optimized JSON models and can map a runtime
+plan and generated C back to source occurrences:
+
+```sh
+python3 rhodium/sim/inspect_ir.py original.json optimized.json --plan plan.json --source model.c
+```
+
+Use `--output report.json` to save the report. Optional `--binary model.so` uses
+`objdump` to inspect x86 machine code. Instruction and register counts are static
+observations; they do not measure runtime cost or peak register liveness.
+
 ## State and semantic kernels
 
 Flip-flops use two banks whose roles swap at publication. SRAM has stable backing

@@ -22,7 +22,7 @@ if [[ "$("${CC:-cc}" -dumpmachine)" == x86_64*-linux* ]]; then
 fi
 "${CC:-cc}" -std=c17 -pthread -O2 -g -Wall -Wextra -Werror -fPIC -shared \
   ${RDS_SANITIZER_FLAGS:-} "${runtime_flags[@]}" "${runtime_sources[@]}" -ldl -o "$core_build/librhodium_sim.so"
-for group in compiler semantic runtime codegen; do
+for group in compiler semantic runtime codegen inspection; do
   python3 "rhodium/sim/tests/${group}_test.py" "$core_build"
 done
 printf 'Core regression artifacts: %s\n' "$core_build"

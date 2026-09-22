@@ -294,6 +294,11 @@ retained-construct replays.
 - `semantic_structure_test.cpp` checks demanded-field provenance, feedback,
   pruning, wide keys, and malformed semantic mappings.
 
+- `flow-regions-test.cpp` checks contract-guided grouping against independent
+  arithmetic while preserving shared observers and analysis-only ordering.
+- `lifted-primitives-test.cpp` checks control-mask boundaries, packet ownership,
+  scoreboard old-state semantics, and failed-host retry across generated schedules.
+
 These preserve the original independent oracles. Remaining compiler optimization,
 object-family, arithmetic, and frontend fixture migration is tracked in the
 [selective lowering plan](../core/SELECTIVE_LOWERING_PLAN.md).
@@ -317,3 +322,9 @@ identity checks when adapting these fixtures. Runtime attachment fixtures in
 `codegen_test.py` construct FIFO/broadcast object ABI models directly; library
 recognition after elaboration is not part of this runtime test. The runner also
 checks the x86 assembly path when the host toolchain supports it.
+
+`inspect_ir.py` owns source-mapped comparisons of model stages, runtime plans,
+generated commands, and optional static machine-code reports. Its migrated
+`tests/inspection_test.py` uses the core fixture batch to check shared lookups,
+sparse/default decoder selection, source provenance, and real compiler-output
+disassembly. The core regression runner includes this inspection gate.

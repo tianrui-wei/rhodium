@@ -7,11 +7,11 @@ regression_dir="${1:-$(mktemp -d /tmp/rhodium-runtime-regressions.XXXXXX)}"
 regression_dir="$(realpath "$regression_dir")"
 selected_tests=("${@:2}")
 if (( ${#selected_tests[@]} == 0 )); then
-  selected_tests=(bulk-cycles-test parallel-state-test regions_test fifo-width-test fifo-derived-test bit-relations-test selector-columns-test ring-selection-test matcher-prefix-test packed_matcher_test idle-fifo-test stationary-matcher-test fifo-batch-test contract-kernel-test decoder-specialization-test payload-pool-test payload-lifetime-test payload-exchange-test flow_cache_test semantic_structure_test)
+  selected_tests=(bulk-cycles-test parallel-state-test regions_test fifo-width-test fifo-derived-test bit-relations-test selector-columns-test ring-selection-test matcher-prefix-test packed_matcher_test idle-fifo-test stationary-matcher-test fifo-batch-test contract-kernel-test decoder-specialization-test payload-pool-test payload-lifetime-test payload-exchange-test flow_cache_test semantic_structure_test flow-regions-test lifted-primitives-test)
 fi
 for source in "${selected_tests[@]}"; do
   case "$source" in
-    bulk-cycles-test|parallel-state-test|regions_test|fifo-width-test|fifo-derived-test|bit-relations-test|selector-columns-test|ring-selection-test|matcher-prefix-test|packed_matcher_test|idle-fifo-test|stationary-matcher-test|fifo-batch-test|contract-kernel-test|decoder-specialization-test|payload-pool-test|payload-lifetime-test|payload-exchange-test|flow_cache_test|semantic_structure_test) ;;
+    bulk-cycles-test|parallel-state-test|regions_test|fifo-width-test|fifo-derived-test|bit-relations-test|selector-columns-test|ring-selection-test|matcher-prefix-test|packed_matcher_test|idle-fifo-test|stationary-matcher-test|fifo-batch-test|contract-kernel-test|decoder-specialization-test|payload-pool-test|payload-lifetime-test|payload-exchange-test|flow_cache_test|semantic_structure_test|flow-regions-test|lifted-primitives-test) ;;
     *) echo "Unknown runtime regression: $source" >&2; exit 2 ;;
   esac
 done

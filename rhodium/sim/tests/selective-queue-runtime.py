@@ -63,7 +63,7 @@ class Model:
         return result
 
 
-for depth in [1, 2, 3, 8]:
+for depth in ([] if "--aggregate-only" in sys.argv else [1, 2, 3, 8]):
     for pipe in [False, True]:
         for flow in [False, True]:
             suffix = f"{depth}-{int(pipe)}-{int(flow)}"
@@ -138,7 +138,8 @@ for depth in [1, 2, 3, 8]:
                         model.check(lib.rds_advance(model.ptr))
             for model in models:
                 lib.rds_free(model.ptr)
-print("16 mixed Queue configurations passed 512-cycle pre/post-edge replay; compiled=" + str("--compiled" in sys.argv) + "; verilator=" + str("--verilator" in sys.argv) + "; scalar_optimized=" + str("--scalar-optimized" in sys.argv))
+if "--aggregate-only" not in sys.argv:
+    print("16 mixed Queue configurations passed 512-cycle pre/post-edge replay; compiled=" + str("--compiled" in sys.argv) + "; verilator=" + str("--verilator" in sys.argv) + "; scalar_optimized=" + str("--scalar-optimized" in sys.argv))
 
 
 if "--twins" in sys.argv:

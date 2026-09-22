@@ -9,7 +9,8 @@ cd "$repo_dir"
 export RDS_TEST_DIR="$selective_build"
 export RDS_NESTED_DIR="$selective_build/nested"
 export RDS_MAP_DIR="$selective_build/mapped"
-mkdir "$RDS_NESTED_DIR" "$RDS_MAP_DIR"
+export RDS_VECTOR_DIR="$selective_build/vector"
+mkdir "$RDS_NESTED_DIR" "$RDS_MAP_DIR" "$RDS_VECTOR_DIR"
 export PLTCOMPILEDROOTS="$selective_compiled"
 unset RHODIUM_PRECOMPILED
 tools/run-racket-tests.sh rhodium/sim/tests/*-test.rhm
@@ -20,4 +21,6 @@ cp "$selective_build/librhodium_sim.so" "$RDS_NESTED_DIR/"
 python3 rhodium/sim/tests/selective-queue-runtime.py "$RDS_NESTED_DIR" --compiled --aggregate --optimized --twins
 cp "$selective_build/librhodium_sim.so" "$RDS_MAP_DIR/"
 python3 rhodium/sim/tests/selective-queue-runtime.py "$RDS_MAP_DIR" --compiled --scalar-optimized --aggregate --optimized
+cp "$selective_build/librhodium_sim.so" "$RDS_VECTOR_DIR/"
+python3 rhodium/sim/tests/selective-queue-runtime.py "$RDS_VECTOR_DIR" --compiled --aggregate --optimized --aggregate-only
 printf 'Generated artifacts: %s\n' "$selective_build"

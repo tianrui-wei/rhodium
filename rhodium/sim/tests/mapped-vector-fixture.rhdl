@@ -1,0 +1,34 @@
+#lang rhodium
+// Routes legal cross-element Queue feedback through a retained vector-producing payload map.
+// SPDX-License-Identifier: Apache-2.0
+
+import lib("flow/queue.rhdl") open
+import lib("flow/map.rhdl") open
+
+sync_circuit AggregateQueue(depth :: PosInt, pipe :: Boolean, flow :: Boolean,
+                            ~self_feedback: self_feedback :: Boolean = #false):
+  input payload: Bits(8)
+  input valid: Bool
+  input ready: Bool
+  output input_ready: Bool
+  output output_valid: Bool
+  output left: Bits(8)
+  output right: Bits(8)
+  output occupancy: Bits(index_width(depth + 1))
+  inst queue_instance(Queue(Vec(2, Bits(8)), depth, ~pipe: pipe, ~flow: flow))
+  def input_map = Bits(8) |> map_flow(value):
+    vec(value, (if self_feedback | queue_instance.egress.bits[1] | queue_instance.egress.bits[0]) + bits(1, 8))
+  input_map.left.valid <== valid
+  input_map.left.bits <== payload
+  input_map.right |> queue_instance.ingress
+  queue_instance.egress.ready <== ready
+  input_ready <== input_map.left.ready
+  output_valid <== queue_instance.egress.valid
+  left <== queue_instance.egress.bits[0]
+  right <== queue_instance.egress.bits[1]
+  occupancy <== queue_instance.count
+
+fun elaborate_aggregate(depth, pipe, flow, ~self_feedback: self_feedback = #false):
+  elaborate_with_top(AggregateQueue(depth, pipe, flow, ~self_feedback: self_feedback), ~constructs: #true)
+
+export elaborate_aggregate

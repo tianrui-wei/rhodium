@@ -34,6 +34,9 @@ for mlir in "${mlir_files[@]}"; do
     "$repo_dir/rhodium/sim/tests/$bench" > "$selective_build/verilator-$suffix.log" 2>&1
 done
 replay_flags=(--compiled --verilator)
+if [[ ! -f "$selective_build/direct-1-0-0.rds" ]]; then
+  replay_flags+=(--aggregate-only)
+fi
 if [[ -f "$selective_build/aggregate-direct-1-0-0.rds" ]]; then
   replay_flags+=(--aggregate)
 fi
@@ -47,7 +50,7 @@ if [[ -f "$selective_build/twins-mixed.rds" ]]; then
   replay_flags+=(--twins)
 fi
 python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" "${replay_flags[@]}"
-for child in nested mapped; do
+for child in nested mapped vector; do
   if [[ -d "$selective_build/$child" ]]; then
     bash "$repo_dir/rhodium/sim/tests/run-selective-verilator.sh" "$selective_build/$child"
   fi

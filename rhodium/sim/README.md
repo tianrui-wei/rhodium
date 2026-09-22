@@ -114,8 +114,10 @@ default native optimization. The scalar capture is a register that changes on ev
 edge, including stalls. Sixteen record-producing map configurations also pass
 256-cycle feedback replay in all three execution paths, including optimization.
 A captured Queue output field feeds a different input field without creating a
-false whole-record cycle. Wide/vector mapping and broader effects coverage
-remain pending. [Implementation rules](DEVELOPING.md) describe
+false whole-record cycle. The equivalent two-element vector map also passes
+256-cycle replay in all three paths across sixteen configurations, including
+optimization. Both reject genuine same-field/element bypass cycles. Multiword
+and nested aggregate mapping and broader effects coverage remain pending. [Implementation rules](DEVELOPING.md) describe
 publication, ownership and focused validation.
 
 Native implementations must completely cover each output port with disjoint

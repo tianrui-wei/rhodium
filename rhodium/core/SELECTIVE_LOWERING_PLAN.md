@@ -284,3 +284,13 @@ scalar captured-state replay runs 512. Default-optimized models pass both.
 The native entry point includes the record models in its mapped replay group.
 Wide/vector payloads, broader effects, additional higher-order constructs,
 performance measurements, and previous simulator-suite migration remain open.
+
+## Captured vector feedback
+
+The shared record/vector matrix passes 130 checks, including genuine feedback
+cycle rejection. Sixteen two-element vector configurations pass 256-cycle replay
+in native interpreter, generated C, and materialized CIRCT/Verilator, including
+default native optimization. The independent oracle checks both output elements
+before and after edges. Existing scalar and record native replays pass after the
+runner change. Multiword and nested aggregate captures, effects, pipes,
+performance measurements, and previous simulator-suite migration remain open.

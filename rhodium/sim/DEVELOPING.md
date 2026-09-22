@@ -167,3 +167,10 @@ changing this path.
 
 The record fixture also selects same-field feedback for a negative case: empty
 bypass must report a combinational cycle instead of accepting unsound dependencies.
+
+`mapped-vector-fixture.rhdl` expresses the same feedback computation using two
+vector elements. The shared host matrix emits its models under `RDS_VECTOR_DIR`;
+the native and Verilator runners replay that directory against the aggregate
+oracle. This checks vector packing independently of record field packing. Both
+fixtures reject same-element/field feedback when empty bypass creates a cycle.
+The replay's `--aggregate-only` switch permits this group without scalar models.

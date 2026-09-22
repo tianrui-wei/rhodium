@@ -110,8 +110,11 @@ CIRCT/Verilator; aggregate cases also cover the default native optimizer.
 Captured `map_flow` regions run through generic computation lowering alongside
 selected Queue state. Sixteen configurations with maps before and after Queue
 match interpreter, generated C, and CIRCT/Verilator for 512 cycles, including
-default native optimization. The capture is a register that changes on every
-edge, including stalls. Broader aggregate/vector mapping and effects coverage
+default native optimization. The scalar capture is a register that changes on every
+edge, including stalls. Sixteen record-producing map configurations also pass
+256-cycle feedback replay in all three execution paths, including optimization.
+A captured Queue output field feeds a different input field without creating a
+false whole-record cycle. Wide/vector mapping and broader effects coverage
 remain pending. [Implementation rules](DEVELOPING.md) describe
 publication, ownership and focused validation.
 

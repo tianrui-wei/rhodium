@@ -19,5 +19,5 @@ python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" --compil
 cp "$selective_build/librhodium_sim.so" "$RDS_NESTED_DIR/"
 python3 rhodium/sim/tests/selective-queue-runtime.py "$RDS_NESTED_DIR" --compiled --aggregate --optimized --twins
 cp "$selective_build/librhodium_sim.so" "$RDS_MAP_DIR/"
-python3 rhodium/sim/tests/selective-queue-runtime.py "$RDS_MAP_DIR" --compiled --scalar-optimized
+python3 rhodium/sim/tests/selective-queue-runtime.py "$RDS_MAP_DIR" --compiled --scalar-optimized --aggregate --optimized
 printf 'Generated artifacts: %s\n' "$selective_build"

@@ -1,0 +1,42 @@
+#lang rhombus
+// Checks record-producing retained maps with captured Queue feedback and emits differential models.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../core/main.rhm" open
+  "../../backend/circt.rhm".emit_circt
+  "../../../sims/native/queue.rhm".QueueNative
+  "../../../flow/queue.rhdl".QueueExpansion
+  "../../../flow/map.rhdl".MapConstruct
+  "../../../flow/map.rhdl".MapExpansion
+  "mapped-aggregate-fixture.rhdl".elaborate_aggregate
+  lib("racket/base.rkt") as rkt
+
+def destination = rkt.getenv("RDS_MAP_DIR")
+for (depth in [1, 2, 3, 8]):
+  for (pipe in [#false, #true]):
+    for (flow in [#false, #true]):
+      def source = elaborate_aggregate(depth, pipe, flow)
+      def maps = source.top.operations.filter(~keep: fun (op): op.opcode == "construct.apply" && op.attribute("specialization").identity === MapConstruct)
+      check:
+        maps.length() ~is 1
+        maps[0].attribute("specialization").parameters["payload"].captures.length() ~is 1
+      // Queue has no provider on the direct path; only the map expands.
+      def direct = compile_simulation(source, ~expansions: [MapExpansion], ~lowerings: [QueueNative], ~optimize: #false)
+      def portable = compile_simulation(source, ~expansions: [QueueExpansion, MapExpansion], ~optimize: #false)
+      check:
+        direct.objects.length() ~is 1
+        portable.objects.length() ~is 0
+      when destination
+      | def suffix = to_string(depth) ++ "-" ++ (if pipe | "1" | "0") ++ "-" ++ (if flow | "1" | "0")
+        write_simulation(direct, destination ++ "/aggregate-direct-" ++ suffix ++ ".rds")
+        write_simulation(portable, destination ++ "/aggregate-expanded-" ++ suffix ++ ".rds")
+        def optimized = compile_simulation(source, ~expansions: [MapExpansion], ~lowerings: [QueueNative])
+        write_simulation(optimized, destination ++ "/aggregate-optimized-" ++ suffix ++ ".rds")
+        def materialized = materialize_constructs(source, [QueueExpansion, MapExpansion]).elaboration
+        filesystem.write_bytes(destination ++ "/aggregate-" ++ suffix ++ ".mlir", emit_circt(materialized.design).utf8_bytes(), ~exists: #'truncate)
+
+// Same-field feedback closes a real combinational cycle when empty bypass is enabled.
+check:
+  elaborate_aggregate(1, #false, #true, ~self_feedback: #true) ~throws "combinational cycle"

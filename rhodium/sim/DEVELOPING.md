@@ -155,3 +155,15 @@ and default-optimized models under `RDS_MAP_DIR`. The host entry point creates
 that directory as `mapped/`, and the Verilator runner descends into it. The
 `--scalar-optimized` replay option includes optimized models in both interpreter
 and generated-C modes. Keep generated artifacts outside the worktree.
+
+`mapped-aggregate-fixture.rhdl` builds a record in the retained payload region.
+One field reads the source argument; the other captures a different Queue output
+field. This feedback is legal even with empty bypass. Preserve capture-leaf
+precision through region extraction, composition wiring, and Queue query
+projection. The mapped group emits scalar and aggregate models, including
+optimized variants, and reuses both independent oracles for native and Verilator
+replay. Run `mapped-aggregate-test.rhm` alongside `mapped-queue-test.rhm` when
+changing this path.
+
+The record fixture also selects same-field feedback for a negative case: empty
+bypass must report a combinational cycle instead of accepting unsound dependencies.

@@ -269,3 +269,18 @@ and all scalar, aggregate, nested, repeated-instance, and mapped interpreter/
 generated-C replays. The mapped matrix additionally passes the CIRCT/Verilator
 runner with default-optimized native models included. Boundary, license, and
 CI-routing checks pass.
+
+## Captured record feedback
+
+The mapped native group now includes a record-producing `map_flow` whose second
+field captures Queue's first output field. This remains acyclic through both
+the retained map region and Queue's optional bypass path. Sixteen configurations
+pass 64 new host checks. A subsequent 65-check record batch also rejects
+same-field feedback when empty bypass creates a genuine combinational cycle.
+A combined scalar/record batch passes 192 checks, and
+32 materialized CIRCT/Verilator models match native interpreter and generated C
+against the independent oracles. Record feedback runs 256 cycles per configuration;
+scalar captured-state replay runs 512. Default-optimized models pass both.
+The native entry point includes the record models in its mapped replay group.
+Wide/vector payloads, broader effects, additional higher-order constructs,
+performance measurements, and previous simulator-suite migration remain open.

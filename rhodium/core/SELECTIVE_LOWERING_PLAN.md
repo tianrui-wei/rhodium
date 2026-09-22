@@ -113,11 +113,21 @@ executable construct protocol. The dependent branch establishes the initial mixe
 
 ## Next execution gates
 
-- Implement typed payload regions with explicit captures.
-- Extend effect/error and wide/vector coverage, and migrate the previous
-  simulator regression suite.
-- Measure elaboration, emitted size, memory, and throughput after correctness
-  coverage for the higher-order path passes.
+The evidence sections below are chronological; their pending-work statements
+record the scope at that point. This list is the current remaining scope:
+
+- Complete effect/error coverage, preserving assertions and exactly-once effects
+  across direct selection and portable expansion.
+- Complete native retained-pipe execution; public declarations, portable RTL
+  preservation, and retained trace equivalence are validated below.
+- Migrate the previous simulator regression suite, including core-only inputs.
+- Measure elaboration and compilation time, emitted size, peak memory, and
+  throughput for identical direct and expanded workloads after correctness.
+
+Typed payload regions, frontend capture extraction, retained maps, nested native
+composition, and initial captured-map execution are implemented; see the later
+evidence sections. Completion requires the remaining gates above, not just the
+initial mixed Queue milestone.
 
 ## Dependent native progress
 
@@ -248,78 +258,113 @@ remain required. The simulator sources stay on the dependent branch.
 The ordinary `flow-map --full` fixture also passes its exact SystemVerilog
 reference comparison and existing simulation after the shared macro change.
 
-## Native captured-map execution
+## Dependent native captured-map evidence
 
-The dependent native branch now includes the public payload/capture and retained
-Flow map implementation. Its new fixture places maps before and after Queue,
-with both capturing a register that advances on every edge. Across 16
-configurations, 128 host checks verify retained regions and skipped Queue
-expansion. Direct, expanded, and default-optimized native models match the
-independent 512-cycle pre/post-edge oracle in interpreter and generated-C modes;
-materialized CIRCT/Verilator matches the same vectors.
+The [native captured-map follow-up](https://github.com/tianrui-wei/rhodium/commit/ee3d88d)
+merges the public region/capture/map implementation into the dependent simulator
+branch. Maps before and after Queue capture the same independently advancing
+register. Across 16 configurations, 128 new host checks establish retained
+computations and skipped Queue expansion. Direct, expanded, and default-optimized
+native models match a 512-cycle pre/post-edge oracle in interpreter and generated
+C, and materialized CIRCT/Verilator matches the same vectors. Captures change on
+every edge, including during stalls and pending reset.
 
-This validates live captured computation across Queue's shared state schedule,
-including reset, stalls, empty bypass, full replacement, wraparound, and defined
-invalid payloads. Broader aggregate/vector mapping, effects, additional
-higher-order constructs, performance measurements, and simulator-suite migration
-remain open. The IR-only PR continues to exclude simulator sources.
+The full native entry point passes 517 host checks and all scalar, aggregate,
+nested, repeated-instance, and mapped runtime replays. This closes the initial
+native captured-map milestone. Broader aggregate/vector captured mapping,
+effects, additional higher-order constructs, performance measurements, and
+previous simulator-suite migration remain open. Simulator sources remain outside
+this IR-only PR.
 
-The complete updated `make sim-selective-test` entry point passes 517 host checks
-and all scalar, aggregate, nested, repeated-instance, and mapped interpreter/
-generated-C replays. The mapped matrix additionally passes the CIRCT/Verilator
-runner with default-optimized native models included. Boundary, license, and
-CI-routing checks pass.
+## Captured record feedback follow-up
 
-## Captured record feedback
+The [dependent record-map validation](https://github.com/tianrui-wei/rhodium/commit/27ff886)
+adds a retained record-producing map with live cross-field Queue feedback.
+Sixteen configurations pass 64 positive host checks; the final 65-check record
+batch also rejects same-field feedback when empty bypass creates a combinational
+cycle. A combined scalar/record batch passes 192 checks. Thirty-two materialized
+CIRCT/Verilator models match interpreter and generated-C execution against the
+independent oracles, including default optimization: 256 cycles for record
+feedback and 512 for scalar captures. The native runner now includes mapped
+record models. These focused results do not claim a fresh full-suite run.
 
-The mapped native group now includes a record-producing `map_flow` whose second
-field captures Queue's first output field. This remains acyclic through both
-the retained map region and Queue's optional bypass path. Sixteen configurations
-pass 64 new host checks. A subsequent 65-check record batch also rejects
-same-field feedback when empty bypass creates a genuine combinational cycle.
-A combined scalar/record batch passes 192 checks, and
-32 materialized CIRCT/Verilator models match native interpreter and generated C
-against the independent oracles. Record feedback runs 256 cycles per configuration;
-scalar captured-state replay runs 512. Default-optimized models pass both.
-The native entry point includes the record models in its mapped replay group.
-Wide/vector payloads, broader effects, additional higher-order constructs,
-performance measurements, and previous simulator-suite migration remain open.
+Vector/multiword captures, effects, pipes, performance, and previous simulator
+regression migration remain open. Native source remains on the dependent branch.
 
-## Captured vector feedback
+## Captured vector feedback follow-up
 
-The shared record/vector matrix passes 130 checks, including genuine feedback
-cycle rejection. Sixteen two-element vector configurations pass 256-cycle replay
-in native interpreter, generated C, and materialized CIRCT/Verilator, including
-default native optimization. The independent oracle checks both output elements
-before and after edges. Existing scalar and record native replays pass after the
-runner change. Multiword and nested aggregate captures, effects, pipes,
-performance measurements, and previous simulator-suite migration remain open.
-
-## Captured multiword feedback
-
-The record/vector/multiword host matrix passes 195 checks. A two-element vector
-of 65-bit values spans three runtime words and places its second element at an
-unaligned offset. Sixteen configurations pass 256-cycle pre/post-edge oracle
-replay in interpreter, generated C, and materialized CIRCT/Verilator, including
-default optimization. All payload bits are observed through low/high output
-ports; directed values exercise carry and wraparound alongside random upper bits.
-The existing narrow vector replay still passes with the generalized oracle.
-Nested aggregate captures, effects, retained pipes, performance measurements,
+The [dependent vector-map validation](https://github.com/tianrui-wei/rhodium/commit/ea08e83)
+passes 130 shared record/vector host checks, including genuine bypass-cycle
+rejection. Sixteen two-element vector Queue configurations pass 256-cycle
+pre/post-edge replay against an independent oracle in interpreter, generated C,
+and materialized CIRCT/Verilator, including default native optimization. The
+existing scalar and record native replays also pass after the runner change.
+Multiword and nested aggregate captures, effects, retained pipes, performance,
 and previous simulator-suite migration remain open.
 
-## Captured nested aggregate feedback
+## Captured multiword feedback follow-up
 
-The captured aggregate matrix now includes a record containing a vector of
-65-bit records. Its live feedback crosses all three aggregate boundaries, with
-every payload bit exposed to the same independent wide oracle. All four shapes
-pass 260 host checks, including rejection of genuine same-leaf bypass cycles.
-Sixteen nested configurations pass 256-cycle pre/post-edge replay in interpreter,
-generated C, and materialized CIRCT/Verilator, including default optimization.
-Effects, retained pipes, performance measurements, and previous simulator-suite
-migration remain open.
+The [dependent multiword validation](https://github.com/tianrui-wei/rhodium/commit/6134de7)
+passes 195 record/vector/multiword host checks, including genuine cycle rejection.
+Two 65-bit vector elements span three runtime words, with an unaligned second
+element. All 16 Queue configurations pass 256-cycle pre/post-edge oracle replay
+in interpreter, generated C, and materialized CIRCT/Verilator, including default
+optimization. Every payload bit is observed; directed values exercise 64-bit
+carry and 65-bit wraparound alongside random upper bits. Narrow-vector replay
+also passes with the generalized oracle. Nested aggregates, effects, pipes,
+performance, and previous simulator-suite migration remain open.
+
+## Captured nested aggregate and complete-suite follow-up
+
+The [dependent nested aggregate validation](https://github.com/tianrui-wei/rhodium/commit/12786b0)
+retains a record containing a vector of 65-bit records. All three aggregate
+boundaries preserve live capture dependencies. The four-shape matrix passes 260
+host checks, including genuine-cycle rejection; sixteen nested configurations
+pass 256-cycle pre/post-edge replay in interpreter, generated C, and materialized
+CIRCT/Verilator, including optimization and observation of every payload bit.
 
 The complete updated `make sim-selective-test` passes 777 host checks and all
 base, nested-composition, repeated-instance, captured scalar/record/vector,
-multiword, and nested-aggregate interpreter/generated-C replays. Generated
-artifacts remain external. The nested aggregate matrix additionally passes the
-separate CIRCT/Verilator runner; the full host entry point does not invoke it.
+multiword, and nested-aggregate interpreter/generated-C replays. Verilator is
+validated separately; it is not part of that host entry point. Remaining work is
+effect/error preservation, retained pipes, previous simulator regression migration,
+and performance measurements. Simulator implementation remains on its dependent
+branch.
+
+## Retained pipe declarations and portable expansion
+
+Flow now exports nominal identities and deferred providers for `Pipe`,
+`ValidPipe`, `ValidPipeAlwaysCapture`, and `CtrlPipe`. Their signatures retain
+stage count, payload shape, optional flush ports, backward-ready dependencies
+where applicable, synchronous reset, and state effects. Implementation bodies
+continue to own register construction and trace controls. `PipeExpansions`
+collects all four portable providers without a simulator dependency.
+
+A 288-check focused batch validates skipped bodies, declared versus actual
+leaf dependencies, portable materialization, authored hierarchy/names, and
+normalized per-module CIRCT equality across stage counts, scalar/wide-vector
+payloads, and flush options. The existing Flow chain/static tests pass 78 checks.
+The `pipe`, `ctrl-pipe`, `valid-pipe`, and `valid-pipe-capture-always` CIRCT/Verilator
+fixtures pass with `--full`, including available exact SystemVerilog references.
+Boundary, license, CI-routing, and whitespace checks pass.
+
+Native retained-pipe execution, retained trace equivalence, effect/error coverage,
+previous simulator-suite migration, and performance measurements remain open.
+
+## Retained pipe trace preservation
+
+Fixed-latency, flushable, and repeated elastic event fixtures now materialize
+retained pipe/map declarations before instrumentation. Their existing public-
+transfer scoreboards pass CIRCT/Verilator, including independent reference lanes,
+stalls, bubbles, reset, and flush cancellation.
+
+This exposed duplicate module definitions for repeated resolved compositions.
+Materialization now reuses definitions keyed by the composition and selected
+child implementations, preserving authored names without merging occurrence
+state or distinct lowering choices. Complete event manifests match ordinary
+elaboration after this fix. The existing core materialization and pipe CIRCT
+comparison regressions pass (96 checks). The final trace batch passes all nine
+checks, including exact manifests for fixed, flushable, and elastic pipelines.
+Boundary, license-header, CI-routing, and whitespace checks pass. Native pipe
+execution, broader effect/error coverage, simulator regression migration, and
+performance measurements remain open.

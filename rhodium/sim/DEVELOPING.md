@@ -374,3 +374,11 @@ the current public extraction boundary.
 `alu_test.py` compares unusual control combinations and boundary operands in
 interpreter and generated C. This validates the native operation ABI without
 reintroducing a registry that probes elaborated CPU modules.
+
+`emit-tlb.rhm` emits actual Sv39 TLB RTL. `emit-tlb-models.py` separately
+constructs native object ABI models at depths 2/4/8, with optimized and
+unoptimized variants and a failing host-effect fixture. `tlb-test.sh` runs the
+original independent translation/permission oracle across raw RTL, native,
+debug/release generated C, and parallel execution. Preserve fill/invalidate/reset
+priority, overlapping entries, probe permissions, and failed-publication retry
+when changing this path. The object runner includes this group.

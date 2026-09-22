@@ -1,0 +1,15 @@
+#lang rhombus
+// Emits actual Sv39 TLB RTL for independent native-object differential replay.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../frontend/kernel.rhm" as frontend
+  "../../../cores/rv5stage/mmu/tlb.rhdl" as tlb
+  lib("racket/base.rkt") as rkt
+
+def directory = rkt.getenv("RDS_TEST_DIR")
+for (depth in [2, 4, 8]):
+  def top = frontend.run_elaboration_with_top(fun (): tlb.RV5StageTlb(depth)).top
+  def name = directory ++ "/tlb-" ++ to_string(depth)
+  write_simulation(compile_simulation(top, ~semantic_kernels: #false), name ++ "-raw.rsim")

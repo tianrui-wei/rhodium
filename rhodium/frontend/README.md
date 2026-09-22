@@ -382,3 +382,21 @@ language to bind expanded RTL's effects to the declaration. Consumers use the
 [core selection API](../core/README.md#constructs-inside-module-dfgs) with their
 own registrations. Standard CIRCT emission currently consumes expanded module
 IR; it diagnoses an unresolved `construct.apply` rather than omitting it.
+
+## Payload expansion hook
+
+Library extensions can call `payload_expansion(arguments, expand)` with hardware
+arguments and a zero-argument callback returning hardware data. The callback
+executes once. The result has `value`, the ordinary hardware result, and
+`captured`, which is false during ordinary elaboration. With `~constructs: #true`,
+`captured` is a core `CapturedPayload` with an independent typed region and live
+source bindings. See the [core payload contract](../core/README.md#payload-computation-regions).
+
+This hook extracts computation; it does not insert a retained transport construct
+or change the result's wiring. A library can use
+`apply_construct(specialization, inputs, ~name: "construct")` to emit a retained
+operation and receive its result values. Inputs follow the contract's input-port
+order; names are disambiguated against existing instances and retained operations.
+The public language also exposes the core composition records for portable
+providers. Flow's [retained map](../../flow/README.md#retained-payload-mapping)
+combines these extension APIs.

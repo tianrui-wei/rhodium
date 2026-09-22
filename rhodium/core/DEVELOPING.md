@@ -195,3 +195,31 @@ never imports an extension owner. Run `tests/metadata-remap-test.rhm` and event
 materialization coverage for ownership, sealing, endpoint identity, and trace
 preservation. An explicit hardware-only option retains source metadata without
 attaching it to the copied design.
+
+## Payload region ownership
+
+`payload.rhm` owns the typed argument/capture partition and pure computation
+checks. It reuses `CoreImplementation`, whole-design verification, and public
+leaf dependency analysis; it does not introduce another expression opcode set.
+Validate all descendant modules, including unused operations, before accepting
+a region as pure. Keep frontend capture discovery and Flow transport contracts
+outside core. Run `tests/payload-test.rhm` for explicit capture coverage,
+immutability, purity, and dependency-contract rejection.
+
+`payload-record.rhm` separates the immutable region declaration and weak identity
+certificate registry from validation. This keeps construct parameter checking
+independent of the verifier/composition import chain. Only `payload.rhm`
+publishes certificates after full purity, dependency, and ownership checks;
+certification helpers are internal and are not re-exported by the public core.
+`construct.rhm` accepts certified regions as immutable parameters, and
+`lowering.rhm` compares regions by identity for expansion progress. Printer
+support exposes the body name and argument/capture split. Payload tests also
+exercise direct selection, deferred portable expansion, and materialization.
+
+`capture.rhm` owns operation-scope extraction and explicit source bindings. It
+allocates value/place maps before cloning connections, recursively copies pure
+child modules, rebuilds child output drives, and verifies the independent design.
+Preserve readable source names where possible and disambiguate against generated
+argument/capture/result names. Run `tests/capture-test.rhm` and
+`tests/capture-hierarchy-test.rhm` for ownership, open source modules, repeated
+captures, escaping writes, and aggregate dependencies through copied hierarchy.

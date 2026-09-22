@@ -104,90 +104,146 @@ and 13 transport examples, covering pipelines, arbitration, routing, forks,
 joins, stalls, retained storage, and windows. After fixing array endpoint
 reconstruction, the complete event regression passes 503 checks. The backend
 continues to reject inputs not yet materialized.
-Native integration, three-way differential simulation, and typed payload regions
-remain pending. Core control contracts accept direct ports, transparent wires,
+Native runtime sources remain outside this IR-only branch; dependent execution
+evidence is recorded below. Typed payload regions remain pending. Core control contracts accept direct ports, transparent wires,
 and reset casts; a data-to-clock cast introduces a distinct domain and cannot
 stand in for a declared boundary clock. Derived controls need explicit support.
 The optional `SemanticNode` mechanism remains descriptive and is not the
-executable construct protocol. No end-to-end native milestone is claimed.
+executable construct protocol. The dependent branch establishes the initial mixed-design execution milestone.
 
 ## Next execution gates
 
-- Connect native Queue and generic RTL to the shared simulation schedule
-  and run the three-way differential gate. The hardware-only fixture is not
-  evidence for the native implementation.
+- Implement typed payload regions with explicit captures.
+- Extend effect/error and wide/vector coverage, and migrate the previous
+  simulator regression suite.
+- Measure elaboration, emitted size, memory, and throughput after correctness
+  coverage for the higher-order path passes.
 
-## Dependent native integration evidence
+## Dependent native progress
 
-The `selective-native` worktree restores the existing private simulation
-compiler/runtime and replaces probe-based model registration with public
-construct selection. The first scalar Queue milestone passes 80 extraction
-checks across 16 depth/pipe/flow configurations: the selected portable body
-executes zero times, while expanded extraction executes it once. Each Queue
-connects to ordinary arithmetic, control gating, and a register in one execution
-model. Direct and expanded models match an independent 512-cycle pre/post-edge
-oracle in interpreter and generated-C modes, and CIRCT/Verilator matches the
-same vectors. Seven additional checks establish per-occurrence choices and
-expansion caching for repeated Queue definitions. Independent paired runtime
-replay passes 256 cycles for direct, mixed, and expanded choices in interpreter
-and generated-C modes.
+The [separate native implementation](https://github.com/tianrui-wei/rhodium/commit/0ac2a77ff2ac6b8fbf38292c64315061102f6611)
+selects Queue implementations by public construct identity before portable
+expansion. Its `make sim-selective-test` entry point passes 158 host checks,
+512-cycle pre/post-edge oracle replay across 16 scalar depth/pipe/flow
+configurations, and 256-cycle independent-state replay for repeated instances
+with direct, mixed, and expanded choices. Both interpreter and generated-C
+execution pass. CIRCT/Verilator matches the same scalar vectors. The selected
+portable Queue body executes zero times.
 
-This scalar evidence does not finish gates 4–6. The contract and record-payload
-follow-up is described below; nested composition extraction, typed payload
-regions, broader effect/error cases, performance measurements, and migration of
-the previous simulator regression suite remain. Simulator changes stay in this
-dependent branch; the IR PR remains free of compiler/runtime sources.
-
-## Native contract and aggregate validation
-
-`native-contract.rhm` now verifies packed input/output ranges, disjoint complete
-output coverage, dependency containment at public leaves, exact effect names,
-and Queue clock/reset/query ABI requirements. Pure native functions reject
-stateful or external effects. Queue payload projections use `NativeSlice` to
-avoid introducing whole-payload dependencies; state capture still consumes the
-complete payload. Descriptor ordering does not change packed output layout.
-
-The native CI entry point passes 158 host checks, including invalid native
-bindings, clocks/resets, and effects. Sixteen record-payload Queue configurations
-include legal cross-field feedback and pass interpreter, generated-C, and
-CIRCT/Verilator replay against an independent 256-cycle oracle. Default-optimized
-models also pass the same replay. Scalar 512-cycle and paired-instance regression
-coverage continues to pass. Native CI installs the standalone optimizer's JSON
-and Boost headers. Generated artifacts remain outside the checkout.
+Native boundary verification now checks packed ranges, complete disjoint output
+coverage, leaf-sensitive dependency containment, exact effect names, and Queue
+clock/reset/query ABI requirements. Sixteen record-payload configurations with
+legal cross-field feedback pass 256-cycle replay against an independent oracle,
+including interpreter, generated C, and CIRCT/Verilator. Default-optimized native
+models pass as well. Directed cases include reset-time payload writes, full
+replacement, pending reset, and empty bypass. Payload queries preserve field
+input dependencies while state capture continues to read the full payload.
 
 Remaining gates include nested composition extraction, typed payload regions,
 additional effect/error and wide/vector coverage, performance measurements, and
-migration of the previous simulator suite. The new verifier checks boundary
-conformance; target implementations still need semantic differential evidence.
+migration of the previous simulator suite. Boundary verification is not proof
+of an arbitrary target implementation's semantics; differential evidence remains
+required. No simulator implementation is added to this IR PR.
 
-## Nested native composition progress
+## Nested native execution follow-up
 
-The native extractor now resolves scoped composition connections by packed
-range and recursively allocates native or portable core children. Two enclosing
-composition levels around Queue pass 112 selection checks across 16
-configurations. Individual port leaves are connected in reverse declaration
-order. The selected Queue body is skipped; fallback expands it once. Both paths
-pass 512-cycle pre/post-edge interpreter and generated-C replay against the
-independent mixed Queue/arithmetic/register oracle.
+The [dependent nested extractor](https://github.com/tianrui-wei/rhodium/commit/fb97afb)
+passes 112 checks across two composition levels and 16 Queue configurations.
+Connections use individual leaves in reverse declaration order. Direct selection
+skips the Queue body; portable fallback expands it once. Both paths pass
+512-cycle pre/post-edge replay in the interpreter and generated C against the
+independent mixed Queue/arithmetic/register oracle. A focused existing Queue,
+aggregate, and repeated-occurrence regression passes 119 checks.
 
-This establishes nested boundary execution, not all of gate 6. Remaining nested
-coverage includes multiple differently selected siblings, aggregate cross-field
-feedback through nested boundaries, and materialized CIRCT/Verilator replay.
-Typed payload regions, broader effects and vector coverage, performance, and
-migration of the previous simulator suite remain outstanding.
+Remaining nested coverage includes differently selected siblings, aggregate
+feedback across nested boundaries, and CIRCT/Verilator comparison of these new
+fixtures. Typed payload regions and the other outstanding gates remain active.
+The implementation stays on the dependent branch; this PR contains no simulator
+runtime or compiler code.
 
-## Nested differential coverage
+## Nested differential follow-up
 
-The nested fixture now passes 224 checks across scalar and record payloads.
-Thirty-two materialized CIRCT/Verilator models match the independent native
-replay oracles: 512 pre/post-edge cycles for each scalar configuration and 256
-for each aggregate feedback configuration. The latter includes default-optimized
-native execution. Cross-field feedback remains acyclic through both enclosing
-composition levels, with connections declared in reverse packed order.
+The [dependent validation follow-up](https://github.com/tianrui-wei/rhodium/commit/fa25a43)
+passes 224 scalar/aggregate nested checks plus seven repeated-instance selection
+checks. Two enclosing composition levels preserve legal record-field feedback.
+Thirty-two materialized CIRCT/Verilator models match the same oracle as native
+interpreter and generated-C execution: 512 cycles for scalar configurations and
+256 for aggregate configurations, including default native optimization.
+Repeated nested occurrences also pass 256-cycle independent-state replay for
+direct, mixed, and expanded choices. These results close the nested validation
+items listed above. Typed payload regions, broader effect/error and wide/vector
+coverage, performance measurements, and simulator-suite migration remain open.
 
-Seven repeated-instance checks cover direct, mixed, and expanded selections
-behind nested boundaries. Both interpreter and generated-C modes replay their
-independent state against a 256-cycle oracle. The host runner includes these
-nested fixtures, and the Verilator runner descends into their generated directory.
-Typed payload regions, additional effect/error and wide/vector coverage,
-performance measurements, and previous simulator suite migration remain open.
+## Payload region foundation
+
+Core now exposes `PayloadRegion`, `payload_region`, and
+`verify_payload_region`. A region partitions every input of a pure core module
+into typed arguments and explicit live capture ports. Its `CoreImplementation`
+contract derives leaf dependencies from the body. Verification seals the design,
+checks the complete input partition, rejects state/effects/control ports through
+hierarchy, and checks explicitly supplied dependency contracts.
+
+This is a computation representation, not completed higher-order retention.
+Connecting regions to retained construct declarations, extracting frontend
+captures, retaining `map_flow`, and testing changing captures under stalls
+remain required before gate 6 is complete.
+
+The focused payload/composition batch passes 37 checks, including explicit
+capture coverage, pure hierarchical dependencies, state rejection, sealing, and
+understated dependency diagnostics. Boundary, license, and CI-routing checks pass.
+This evidence does not yet cover captured computation during native execution.
+
+## Retained payload parameters
+
+Verified payload regions can now appear in immutable construct parameters.
+A dependency-neutral record and weak identity certificate registry avoid an
+import cycle between declarations and full verification. Only successfully
+verified regions are accepted; recursive expansion compares regions by identity.
+Direct lowerings receive the region without running portable expansion. A
+portable provider can return its existing core implementation, and materialization
+preserves capture ports as live inputs. IR text exposes the module name and
+argument/capture partition.
+
+The focused payload/construct/composition batch passes 68 checks, including
+uncertified-region rejection, direct selection without expansion, portable
+selection, materialization, and readable IR. Boundary, license, and CI-routing
+checks pass. Frontend capture extraction, retained `map_flow`, and changing-capture
+execution under stalls remain required; this is still partial gate-6 progress.
+
+## Scoped capture extraction
+
+`capture_payload` copies a scoped pure computation into an independent verified
+design and returns original argument/capture values for live binding. It
+coalesces repeated captures, includes external results, copies pure child
+modules, preserves aggregate dependencies and readable names, and rejects state,
+resources, and writes escaping the selected scope. The source design remains
+mutable. Aggregate place connections must be complete before extraction.
+
+The frontend `payload_expansion` hook invokes its callback once. Ordinary mode
+returns the original hardware result; retained mode also returns the extracted
+region and live bindings. The focused core/frontend batch passes 48 checks,
+including copied hierarchy, record-field dependencies, retained parameters, and
+identical ordinary/retained hardware. Boundary, license, and CI-routing checks
+pass. Retained `map_flow`, native execution with changing captures under stalls,
+and the other gate-6 work remain unfinished.
+
+## Retained Flow map
+
+`map_flow` now emits `MapConstruct` in retained elaboration. Its parameters carry
+the verified payload region and stable-mapping promise; operands carry payload,
+live captures, valid, and ready. `MapExpansion` returns a scoped composition
+with a generic computation child and direct handshake connections. Default
+elaboration retains direct assignments and existing invalid-use diagnostics.
+The frontend exposes `apply_construct` and composition records for inline
+library providers; chained maps use distinct occurrence names.
+
+The retained-map and existing flow-chain/static/frontend regressions pass 109
+checks. The `retained-flow-map` CIRCT/Verilator fixture materializes the canonical
+record mapper and passes 512 stimulus steps with a second capture-only change
+at every step, including stalls and invalid input. This verifies live captures
+on the portable SystemVerilog path. Native captured-map execution, mixed map/Queue
+stateful replay, broader capture/effect/vector cases, and performance evidence
+remain required. The simulator sources stay on the dependent branch.
+
+The ordinary `flow-map --full` fixture also passes its exact SystemVerilog
+reference comparison and existing simulation after the shared macro change.

@@ -576,7 +576,8 @@ remaining consumer integration.
 A library exports a nominal `ConstructIdentity(name, version)` and creates a
 `ConstructSpecialization(identity, parameters, contract)` for each parameter
 configuration. Names are diagnostic; matching uses declaration identity.
-Parameters are immutable strings, booleans, integers, hardware types, lists,
+Parameters are immutable strings, booleans, integers, hardware types, verified
+[payload regions](#payload-computation-regions), lists,
 and string-keyed maps. A `ConstructOccurrence` adds its own name and location.
 Implementations must preserve occurrence-local state even when specializations
 are shared.
@@ -700,3 +701,47 @@ records implement this protocol.
 verification seals the design. This lets transformation passes rebuild metadata
 once all hardware mappings exist. Attaching metadata to a sealed design remains
 an error. Materialization does not rewrite source hardware or metadata.
+
+## Payload computation regions
+
+`payload_region(module_def, arguments, captures)` builds a `PayloadRegion` from
+an ordinary pure core module. `arguments` and `captures` are disjoint lists of
+input-port names and together must cover every input. Port types define the
+argument, capture, and result types. Capture ports receive live hardware values;
+they do not hold elaboration-time snapshots. Results are the module output ports.
+
+The region's `implementation` is a `CoreImplementation` that can be connected as
+a leaf in a `HardwareComposition`. Its contract derives field-level dependencies
+from the module body. The factory verifies and seals the owning design; finish
+building that design before creating a region. `verify_payload_region` also
+checks explicitly constructed records, including their declared dependencies.
+Regions permit pure hierarchical computation and reject state, effects, control
+ports, and unexpanded constructs. Transport state and effects belong outside the
+payload computation.
+
+Flow uses these records for [retained payload mapping](../../flow/README.md#retained-payload-mapping);
+source capture discovery belongs to the frontend extension hook.
+
+Verified regions may also appear in `ConstructSpecialization.parameters`,
+including nested lists or maps. Direct lowerings receive the region before
+portable expansion and can lower its computation through the generic core path.
+Portable providers can return its `implementation` or embed that implementation
+in a larger composition. Explicitly constructed region records must pass
+`verify_payload_region` before use as parameters. Different region objects remain
+distinct during recursive expansion checks; no equivalence of arbitrary payload
+programs is inferred. IR text identifies the body module and argument/capture
+partition.
+
+`capture_payload(source, operations, arguments, results, ~name: "Payload")`
+extracts a scoped computation while its source module is still being built.
+It returns `CapturedPayload(region, arguments, captures)`: the region owns an
+independent verified design, while the binding lists refer to the original live
+hardware values. Inputs are ordered as arguments followed by captures. Repeated
+references to the same external value share a capture port. A result outside the
+selected operation scope is also captured.
+
+The selected body can contain combinational operations, complete local wires,
+and pure module instances. Child modules are copied into the independent design.
+State, external effects, resource references, and writes outside the selected
+scope fail explicitly. Finish aggregate place connections before extracting
+them. Extraction does not seal or modify the enclosing design.

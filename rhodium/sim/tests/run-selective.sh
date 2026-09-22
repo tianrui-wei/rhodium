@@ -16,5 +16,5 @@ tools/run-racket-tests.sh rhodium/sim/tests/*-test.rhm
   rhodium/sim/runtime/*.c -ldl -o "$selective_build/librhodium_sim.so"
 python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" --compiled --twins --aggregate --optimized
 cp "$selective_build/librhodium_sim.so" "$RDS_NESTED_DIR/"
-python3 rhodium/sim/tests/selective-queue-runtime.py "$RDS_NESTED_DIR" --compiled
+python3 rhodium/sim/tests/selective-queue-runtime.py "$RDS_NESTED_DIR" --compiled --aggregate --optimized --twins
 printf 'Generated artifacts: %s\n' "$selective_build"

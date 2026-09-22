@@ -27,4 +27,11 @@ for mlir in "$selective_build"/queue-*.mlir "$selective_build"/aggregate-*.mlir;
     -Mdir "$selective_build/verilator-$suffix" -j 2 "$verilog" \
     "$repo_dir/rhodium/sim/tests/$bench" > "$selective_build/verilator-$suffix.log" 2>&1
 done
-python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" --compiled --verilator --aggregate --optimized
+replay_flags=(--compiled --verilator --aggregate --optimized)
+if [[ -f "$selective_build/twins-mixed.rds" ]]; then
+  replay_flags+=(--twins)
+fi
+python3 rhodium/sim/tests/selective-queue-runtime.py "$selective_build" "${replay_flags[@]}"
+if [[ -d "$selective_build/nested" ]]; then
+  bash "$repo_dir/rhodium/sim/tests/run-selective-verilator.sh" "$selective_build/nested"
+fi

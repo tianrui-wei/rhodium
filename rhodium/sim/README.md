@@ -104,8 +104,10 @@ different implementation choices. Record-payload fixtures exercise field-level
 feedback and the default native optimizer. Nested compositions support selected
 native children and portable core children under the same schedule. The nested
 Queue matrix checks two enclosing levels, leaf-wise wiring, skipped expansion,
-and 512-cycle interpreter/generated-C replay. Higher-order payload regions
-and broader nested mixed-instance coverage remain pending. [Implementation rules](DEVELOPING.md) describe
+scalar and aggregate feedback, and independent choices for repeated instances.
+Scalar and aggregate cases match interpreter, generated C, and materialized
+CIRCT/Verilator; aggregate cases also cover the default native optimizer.
+Higher-order payload regions remain pending. [Implementation rules](DEVELOPING.md) describe
 publication, ownership and focused validation.
 
 Native implementations must completely cover each output port with disjoint

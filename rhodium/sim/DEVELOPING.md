@@ -112,9 +112,13 @@ Composition occurrences allocate their children before resolving connections;
 input and output projections follow those connections lazily, preserving
 field-level dependencies across nested boundaries. Native leaves and portable
 core children retain separate occurrence state under the shared schedule.
-Run `nested-queue-test.rhm` and its interpreter/generated-C replay when changing
-this path; its two enclosing compositions wire individual leaves in reverse
-declaration order to exercise packed assembly independently of source order.
+Run `nested-queue-test.rhm`, `nested-occurrence-test.rhm`, and their runtime
+replay when changing this path. Two enclosing compositions wire individual
+leaves in reverse declaration order to exercise packed assembly independently
+of source order. Record payloads retain legal cross-field feedback through
+those boundaries. The Verilator runner recursively checks the generated
+`nested/` fixtures; repeated-instance replay uses independent traffic for
+direct, mixed, and expanded choices.
 
 The focused host tests prove skipped expansion and occurrence-local choices.
 Runtime replay checks every public output before/after edges against a separate

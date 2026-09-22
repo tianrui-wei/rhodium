@@ -175,3 +175,19 @@ coverage includes multiple differently selected siblings, aggregate cross-field
 feedback through nested boundaries, and materialized CIRCT/Verilator replay.
 Typed payload regions, broader effects and vector coverage, performance, and
 migration of the previous simulator suite remain outstanding.
+
+## Nested differential coverage
+
+The nested fixture now passes 224 checks across scalar and record payloads.
+Thirty-two materialized CIRCT/Verilator models match the independent native
+replay oracles: 512 pre/post-edge cycles for each scalar configuration and 256
+for each aggregate feedback configuration. The latter includes default-optimized
+native execution. Cross-field feedback remains acyclic through both enclosing
+composition levels, with connections declared in reverse packed order.
+
+Seven repeated-instance checks cover direct, mixed, and expanded selections
+behind nested boundaries. Both interpreter and generated-C modes replay their
+independent state against a 256-cycle oracle. The host runner includes these
+nested fixtures, and the Verilator runner descends into their generated directory.
+Typed payload regions, additional effect/error and wide/vector coverage,
+performance measurements, and previous simulator suite migration remain open.

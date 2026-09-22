@@ -1,0 +1,56 @@
+#lang rhombus
+// Checks independent native choices and state for repeated Queue occurrences behind nested boundaries.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../core/main.rhm" open
+  "../../../sims/native/queue.rhm".QueueNative
+  "../../../flow/tests/retained-queue-fixture.rhdl" open
+  lib("racket/base.rkt") as rkt
+
+def leaf_identity = ConstructIdentity("test.nested.occurrence.queue", 1)
+fun wrap(name, body):
+  def child = CompositionInstance("child", body)
+  def connections = for List (port in body.contract.ports):
+    def boundary = CompositionEndpoint(#false, port.name)
+    def internal = CompositionEndpoint(child, port.name)
+    if port.direction == "input"
+    | CompositionConnection(boundary, internal)
+    | CompositionConnection(internal, boundary)
+  HardwareComposition(
+    name, body.contract, [child], connections,
+    body.contract.effects.map(fun (effect): CompositionEffect(child, effect.name, effect.name)))
+
+def first_only = TargetLowering(leaf_identity, "native", fun (occurrence): occurrence.name.contains("/first/"), QueueNative.lower)
+def all_native = TargetLowering(leaf_identity, "native", fun (occurrence): #true, QueueNative.lower)
+def mutable expansions = 0
+def providers = [
+  ExpansionProvider(
+    QueueConstruct,
+    fun (spec): wrap("Outer", wrap("Inner", ConstructSpecialization(leaf_identity, spec.parameters, spec.contract)))),
+  ExpansionProvider(
+    leaf_identity,
+    fun (spec):
+      expansions := expansions + 1
+      QueueExpansion.expand(ConstructSpecialization(QueueConstruct, spec.parameters, spec.contract)))
+]
+def direct = compile_simulation(twins, ~lowerings: [all_native], ~expansions: providers, ~optimize: #false)
+check:
+  expansions ~is 0
+  direct.objects.length() ~is 2
+def mixed = compile_simulation(twins, ~lowerings: [first_only], ~expansions: providers, ~optimize: #false)
+check:
+  expansions ~is 1
+  mixed.objects.length() ~is 1
+  mixed.objects[0][5].contains("/first/") ~is #true
+def portable = compile_simulation(twins, ~expansions: providers, ~optimize: #false)
+check:
+  expansions ~is 2
+  portable.objects.length() ~is 0
+
+def destination = rkt.getenv("RDS_NESTED_DIR")
+when destination
+| write_simulation(direct, destination ++ "/twins-direct.rds")
+  write_simulation(mixed, destination ++ "/twins-mixed.rds")
+  write_simulation(portable, destination ++ "/twins-expanded.rds")

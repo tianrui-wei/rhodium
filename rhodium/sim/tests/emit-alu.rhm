@@ -1,0 +1,16 @@
+#lang rhombus
+// Emits actual RV32/RV64 ALU RTL as the reference for pure native-operation replay.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../main.rhm" open
+  "../../frontend/kernel.rhm" as frontend
+  "../../../cores/alu.rhdl" as alu
+  "../../../riscv/isa/xlen.rhm".XLen
+  lib("racket/base.rkt") as rkt
+
+def directory = rkt.getenv("RDS_TEST_DIR")
+for (xlen in [XLen.X32, XLen.X64]):
+  def top = frontend.run_elaboration_with_top(fun (): alu.ALU(xlen)).top
+  def name = directory ++ "/alu-" ++ to_string(xlen.width)
+  write_simulation(compile_simulation(top, ~semantic_kernels: #false), name ++ "-raw.rsim")

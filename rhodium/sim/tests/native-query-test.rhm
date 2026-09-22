@@ -1,0 +1,36 @@
+#lang rhombus
+// Verifies shared native query slices and rejects inconsistent dependency identities.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../../core/main.rhm" open
+  "../main.rhm" open
+
+def identity = ConstructIdentity("test.shared-native-query", 1)
+def contract = ConstructContract(
+  [ConstructPort("a", "input", Bits(2)), ConstructPort("b", "input", Bits(2)),
+   ConstructPort("z", "output", Bits(2))],
+  [ConstructDependency(PortLeaf("z"), [PortLeaf("a"), PortLeaf("b")])], [], [], [])
+def spec = ConstructSpecialization(identity, {}, contract)
+def design = Design()
+def builder = Builder(design)
+def top = builder.module("SharedNativeQuery")
+def inputs = for List (name in ["a", "b"]): builder.input(top, name, Bits(2))
+def op = builder.construct_apply(top, spec, inputs, "shared")
+builder.drive(builder.output(top, "z", Bits(2)), op.results[0])
+builder.finish(top)
+
+fun extract(low, dependencies):
+  def model = NativeFunction(
+    5, [["a", 0, 2], ["b", 0, 2]],
+    [NativeOutput("z", 0, 1, 0, [0, 1], low, 2),
+     NativeOutput("z", 1, 1, 0, dependencies, 1, 2)])
+  def lowering = TargetLowering(
+    identity, "native", fun (_): #true,
+    fun (specification, occurrence): NativeImplementation(contract, model, []))
+  compile_simulation(top, ~lowerings: [lowering], ~optimize: #false)
+
+check:
+  extract(0, [0, 1]).operations.filter(~keep: fun (operation): operation[0] == 5).length() ~is 1
+  extract(2, [0, 1]) ~throws "exceeds query width"
+  extract(0, [1, 0]) ~throws "inconsistent width or dependencies"

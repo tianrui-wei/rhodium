@@ -1,0 +1,18 @@
+#lang rhodium
+// Connects later matcher requests to earlier grants while retaining an acyclic leaf graph.
+// SPDX-License-Identifier: Apache-2.0
+
+import lib("flow/matcher.rhdl").OutputGreedyRoundRobinMatcher
+
+sync_circuit MatcherFeedback():
+  input(requests, accepts): Bits(2)
+  output grants: Bits(4)
+  inst selection(OutputGreedyRoundRobinMatcher(2, 2))
+  for (row in 0..2):
+    selection.requests[row][0] <== requests[row] === bits(1, 1)
+    selection.requests[row][1] <== selection.grants[row][0]
+    selection.accepts[row] <== accepts[row] === bits(1, 1)
+  grants <== selection.grants.as_bits()
+
+def elaboration = elaborate_with_top(MatcherFeedback())
+export elaboration

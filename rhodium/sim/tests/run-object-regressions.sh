@@ -11,8 +11,10 @@ export PLTCOMPILEDROOTS="$(mktemp -d "$object_build/compiled.XXXXXX")"
 export PYTHONDONTWRITEBYTECODE=1
 unset RHODIUM_PRECOMPILED
 export RDS_OPTIMIZER="${RDS_OPTIMIZER:-$(bash rhodium/sim/compiler/run.sh --print-path)}"
-tools/run-racket-tests.sh rhodium/sim/tests/emit-object-rtl.rhm rhodium/sim/tests/emit-replication.rhm rhodium/sim/tests/emit-library.rhm
-python3 rhodium/sim/tests/emit-object-models.py "$object_build"
+tools/run-racket-tests.sh rhodium/sim/tests/emit-object-rtl.rhm rhodium/sim/tests/emit-replication.rhm rhodium/sim/tests/emit-library.rhm rhodium/sim/tests/emit-matcher.rhm rhodium/sim/tests/native-query-test.rhm rhodium/sim/tests/emit-alu.rhm
+python3 rhodium/sim/tests/emit_object_models.py "$object_build"
+python3 rhodium/sim/tests/emit-matcher-models.py "$object_build"
+python3 rhodium/sim/tests/emit-alu-models.py "$object_build"
 runtime_sources=(rhodium/sim/runtime/*.c)
 runtime_flags=()
 unset RDS_TEST_ASM
@@ -26,4 +28,6 @@ fi
 RDS_TEST_COMPILED= python3 rhodium/sim/tests/native_objects_test.py "$object_build"
 RDS_TEST_COMPILED=1 python3 rhodium/sim/tests/native_objects_test.py "$object_build"
 python3 rhodium/sim/tests/library_test.py "$object_build"
+python3 rhodium/sim/tests/matcher_test.py "$object_build"
+python3 rhodium/sim/tests/alu_test.py "$object_build"
 printf 'Object regression artifacts: %s\n' "$object_build"

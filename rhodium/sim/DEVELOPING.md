@@ -335,7 +335,7 @@ disassembly. The core regression runner includes this inspection gate.
 fresh compiled root. The selective host runner includes this gate. All simulator
 runner artifact roots honor `TMPDIR`, allowing validation on a filesystem with
 available quota without writing generated files into the checkout.
-`emit-object-models.py` constructs explicit runtime object ABI fixtures; it does
+`emit_object_models.py` constructs explicit runtime object ABI fixtures; it does
 not identify library bodies after expansion. `emit-object-rtl.rhm` independently
 compiles the actual Flow implementations as generic RTL references. Preserve
 these two fixture paths so native-versus-RTL comparisons remain independent.
@@ -359,3 +359,18 @@ core-IR fallback, including scoreboard diagnostics, queue options, pipe latency,
 arbitration, and credited transport. They do not claim direct target registrations
 for every library construct. Raw, optimized, parallel, generated-C, and supported
 x86 assembly execution retain the original independent protocol oracles.
+
+The object runner also emits actual rotating-matcher RTL with `emit-matcher.rhm`
+and explicit prefix-query ABI models with `emit-matcher-models.py`. The unchanged
+`matcher_test.py` oracle compares six matrix shapes against independent rotating
+priorities, plus a later-column feedback case that must remain acyclic. The
+shared fixture helper is importable as `emit_object_models.py`.
+`native-query-test.rhm` uses a retained pure construct to verify shared-query
+reuse and reject out-of-range slices or inconsistent dependency identities at
+the current public extraction boundary.
+
+`emit-alu.rhm` provides actual RV32/RV64 physical-control RTL, while
+`emit-alu-models.py` creates explicit stateless ALU operations. The unchanged
+`alu_test.py` compares unusual control combinations and boundary operands in
+interpreter and generated C. This validates the native operation ABI without
+reintroducing a registry that probes elaborated CPU modules.

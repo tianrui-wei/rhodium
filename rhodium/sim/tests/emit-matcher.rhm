@@ -1,0 +1,21 @@
+#lang rhombus
+// Emits real rotating matchers and a leaf-acyclic feedback wrapper for native equivalence.
+// SPDX-License-Identifier: Apache-2.0
+
+import:
+  "../../core/main.rhm" open
+  "../main.rhm" open
+  "../../frontend/kernel.rhm" as frontend
+  "../../../flow/matcher.rhdl" as matcher
+  "matcher-feedback-fixture.rhdl" as feedback
+  lib("racket/base.rkt") as rkt
+
+def directory = rkt.getenv("RDS_TEST_DIR")
+fun save(top, name):
+  write_simulation(compile_simulation(top, ~semantic_kernels: #false), directory ++ "/" ++ name ++ "-raw.rsim")
+for (shape in [[1, 1], [3, 2], [3, 5], [8, 4], [11, 11], [64, 2]]):
+  def top = frontend.run_elaboration_with_top(fun (): matcher.OutputGreedyRoundRobinMatcher(shape[0], shape[1])).top
+  save(top, "matcher-" ++ to_string(shape[0]) ++ "-" ++ to_string(shape[1]))
+
+// The feedback circuit is fully built before elaboration seals its design.
+save(feedback.elaboration.top, "matcher-feedback")

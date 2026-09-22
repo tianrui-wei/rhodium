@@ -246,7 +246,8 @@ verifying that neither this output nor hardware state is published.
 `tests/run-runtime-regressions.sh`, which builds compiler model helpers once and runs
 package-local tests migrated from the previous simulator PR. It accepts an
 existing runtime build directory, or creates an external build and runtime when
-called without arguments. The selective host entry point invokes it after the
+called without arguments. After the build-directory argument, optional test names
+select a focused subset; unknown names fail before compilation. The selective host entry point invokes it after the
 retained-construct replays.
 
 - `bulk-cycles-test.cpp` compares batched edges with ordinary/reference execution,
@@ -255,6 +256,10 @@ retained-construct replays.
   state owners across component/replicated schedules and eight-worker execution.
 - `regions_test.cpp` compares static-demand and eager execution across narrow/wide
   state, guards, scratch reuse, and multiple generated-code layouts.
+- `fifo-width-test.cpp` checks inductive narrowing, cyclic bit growth, wide
+  selection views, invalid selectors, and serialized opcode validation.
+- `fifo-derived-test.cpp` checks enqueue-time derived fields at depths one through
+  three and preserves the original transition for incompatible pipeline storage.
 
 These preserve the original independent oracles. Remaining compiler optimization,
 object-family, arithmetic, and frontend fixture migration is tracked in the

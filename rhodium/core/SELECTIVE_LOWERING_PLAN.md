@@ -442,3 +442,21 @@ CI-routing, shell syntax, and whitespace checks pass. Remaining migration includ
 compiler optimization, object-family, arithmetic, and frontend-generated fixtures;
 performance measurement remains open. These are focused regression results,
 not a new complete selective-suite baseline.
+
+## FIFO optimization regression migration
+
+The previous FIFO-width and FIFO-derived-field C++ regressions now live under
+package ownership and run through the shared native regression entry point.
+The runner accepts explicit test names after an existing build directory so
+focused compiler changes do not repeat unrelated scheduling matrices.
+
+Both width-growth cases pass 4,000 stimulus iterations each, checking safe
+240-to-19-bit narrowing, preserved 240-bit cyclic growth, signed/unsigned views,
+strict selector errors, and rejection of an invalid serialized opcode inventory.
+Derived-field replay passes 6,000 cycles at each of depths 1, 2, and 3, including
+reset and changing inputs; incompatible pipeline storage remains untransformed.
+The original oracles are preserved. Explicit loop/return formatting fixes current
+compiler warnings; no optimizer behavior changes in this migration.
+Boundary, license, CI-routing, shell syntax, and whitespace checks pass.
+Remaining compiler/object/arithmetic/frontend migrations and performance
+measurements stay open.
